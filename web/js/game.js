@@ -8,7 +8,7 @@ import { drawIcon } from "./icons.js";
 import { Pet, ambientMood, spriteName, ALL_SPRITES, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 6; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 7; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -75,7 +75,7 @@ const vibrate = (p) => { if (touched) navigator.vibrate?.(p); };
 const TAU = Math.PI * 2;
 const FONT = FONTS.body;
 // Bouche relative au sprite (0..1), relevée sur les sprites « miam » (bouche ouverte).
-const MOUTH = { tetard: [0.36, 0.64], grenouillette: [0.434, 0.43], grenouille: [0.497, 0.43], adulte: [0.497, 0.43] };
+const MOUTH = { tetard: [0.463, 0.47], grenouillette: [0.472, 0.49], grenouille: [0.499, 0.423], adulte: [0.499, 0.423] };
 const GOTH = THEME.gothic; // décor gothique + Ombeline (thèmes hybride et gothique)
 const HYB = THEME.hybrid; // hybride : couleurs pastel, police ronde
 /** Texte du thème courant (prénoms et sourire injectés automatiquement). */
@@ -210,6 +210,7 @@ async function askSecretCode(pond) {
   const res = redeemCode({ ...entry, code: entry.code.toUpperCase() });
   if (res.already) { pond.say("Tu as déjà utilisé ce code. Demande-en un nouveau à papa !", 3.5); return; }
   confetti(pond.particles);
+  pond.setGirlMood?.("clin", 4);
   const gift = [entry.pieces ? `+${entry.pieces} pièces` : "", res.item ? res.item.name : ""].filter(Boolean).join(" et ");
   await askName({ title: "Un cadeau de papa !", text: entry.message || "Surprise !", note: gift ? `Tu reçois : ${gift}` : "", input: false, ok: "Merci papa" });
 }
@@ -328,7 +329,9 @@ function drawHat(id, cx, top, w, t = 0) {
 
 /** Haut de la tête du sprite (proportions relevées sur les sprites Figma). */
 function headTop(stage, x, y, w, h) {
-  return stage === "tetard" ? { cx: x + w * 0.36, top: y + h * 0.03, w: w * 0.62 } : { cx: x + w * 0.5, top: y + h * 0.04, w: w * 0.8 };
+  if (stage === "tetard") return { cx: x + w * 0.48, top: y + h * 0.06, w: w * 0.6 };
+  if (stage === "grenouillette") return { cx: x + w * 0.478, top: y + h * 0.1, w: w * 0.6 };
+  return { cx: x + w * 0.5, top: y + h * 0.14, w: w * 0.56 };
 }
 
 /** Objets de décor achetés à la boutique, posés dans la mare (ou dessinés en vignette). */
@@ -1009,7 +1012,7 @@ function drawPondGothic(night, critters = true) {
 // Tresses noires, robe noire, col blanc… et un sourire qui apparaît peu à peu.
 // tier : 0 impassible, 1 coin de bouche, 2 petit sourire, 3 grand sourire.
 // ---------------------------------------------------------------------------
-const GIRL = { name: "Ombeline", x: 34 };
+const GIRL = { name: "Ombeline", x: 40 };
 const GIRL_LINES = [
   ["Je ne souris jamais. Enfin… presque jamais.", "La mare est sinistre. J'adore.", "Ta grenouille a l'air lugubre. C'est un compliment."],
   ["Hm. Pas mal.", "J'ai failli sourire. Failli.", "Tu t'en occupes bien. Je dis ça, je dis rien."],
@@ -1017,141 +1020,140 @@ const GIRL_LINES = [
   ["Je suis contente que tu sois là, {p}.", "Regarde, la mare a des couleurs ! C'est grâce à toi.", "Tu sais quoi, {p} ? Tu me fais sourire."],
 ];
 
-function drawGirl(x, feet, tier, t, night, { worried = false, blink = false, cheer = false, outfit = progress.girl || {}, scale = 1.3 } = {}) {
-  if (weatherNow() === "rain" && owns("parapluie") && scale > 1) outfit = { ...outfit, main: "parapluie" };
-  const INK = C.COLORS.trait, skin = night ? "#d9d0cf" : "#f3ebe6", black = "#1d1b22";
-  const sway = Math.sin(t * 1.3) * 1.2;
-  const hop = tier >= 3 ? Math.max(0, Math.sin(t * 3)) * 2.5 : 0;
-  ctx.save();
-  ctx.translate(x, feet - hop);
-  ctx.scale(scale, scale);
-  ctx.lineJoin = "round"; ctx.lineCap = "round";
-  // ombre
-  ctx.fillStyle = "rgba(29,27,34,0.2)";
-  ctx.beginPath(); ctx.ellipse(0, hop + 1, 16, 3.5, 0, 0, TAU); ctx.fill();
-  // jambes + chaussures
-  ctx.strokeStyle = black; ctx.lineWidth = 3.4;
-  ctx.beginPath(); ctx.moveTo(-5, -20); ctx.lineTo(-5, -4); ctx.moveTo(5, -20); ctx.lineTo(5, -4); ctx.stroke();
-  ctx.fillStyle = black;
-  ctx.beginPath(); ctx.ellipse(-6, -2, 5, 3, 0, 0, TAU); ctx.ellipse(6, -2, 5, 3, 0, 0, TAU); ctx.fill();
-  ctx.rotate(sway * 0.01);
-  // robe
-  ctx.beginPath();
-  ctx.moveTo(-9, -58); ctx.lineTo(9, -58); ctx.quadraticCurveTo(15, -40, 19, -20);
-  ctx.quadraticCurveTo(0, -15, -19, -20); ctx.quadraticCurveTo(-15, -40, -9, -58); ctx.closePath();
-  ctx.fillStyle = outfit.tenue === "robe_violette" ? "#4b3a6b" : black; ctx.fill();
-  if (outfit.tenue === "robe_rayee") {
-    ctx.save(); ctx.clip(); ctx.fillStyle = "#6b6575";
-    for (let yy = -56; yy < -16; yy += 6) ctx.fillRect(-22, yy, 44, 2.6);
-    ctx.restore();
-  }
-  ctx.strokeStyle = INK; ctx.lineWidth = 2.2; ctx.stroke();
-  // bras (manches) + mains ; bras levés quand elle se réjouit
-  for (const side of [-1, 1]) {
-    ctx.strokeStyle = black; ctx.lineWidth = 5;
-    ctx.beginPath();
-    if (cheer) { ctx.moveTo(side * 9, -55); ctx.quadraticCurveTo(side * 18, -62, side * 17, -74); ctx.stroke(); circle(side * 17, -76, 3, skin, INK, 1.6); }
-    else { ctx.moveTo(side * 9, -55); ctx.quadraticCurveTo(side * 15, -44, side * 13, -34); ctx.stroke(); circle(side * 13, -32, 3, skin, INK, 1.6); }
-  }
-  const hand = cheer ? { x: 17, y: -76 } : { x: 13, y: -32 };
-  const lhand = cheer ? { x: -17, y: -76 } : { x: -13, y: -32 };
-  if (outfit.main === "parapluie") {
-    ctx.strokeStyle = black; ctx.lineWidth = 1.8;
-    ctx.beginPath(); ctx.moveTo(hand.x, hand.y); ctx.lineTo(hand.x, -104); ctx.stroke();
-    ctx.beginPath(); ctx.arc(hand.x, hand.y + 1.5, 2.5, 0, Math.PI); ctx.stroke();
-    ctx.fillStyle = black;
-    ctx.beginPath(); ctx.moveTo(hand.x - 26, -98); ctx.quadraticCurveTo(hand.x, -124, hand.x + 26, -98);
-    for (let i = 0; i < 4; i++) { const x0 = hand.x + 26 - i * 13; ctx.quadraticCurveTo(x0 - 6.5, -103, x0 - 13, -98); }
-    ctx.fill();
-    ctx.strokeStyle = "#4a4652"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hand.x, -111); ctx.lineTo(hand.x - 12, -99); ctx.moveTo(hand.x, -111); ctx.lineTo(hand.x + 12, -99); ctx.stroke();
-  }
-  // bougie la nuit (si la main est libre)
-  if (night && !outfit.main) {
-    const gl = ctx.createRadialGradient(15, -44, 0, 15, -44, 22);
-    gl.addColorStop(0, "rgba(255,207,122,0.5)"); gl.addColorStop(1, "rgba(255,207,122,0)");
-    ctx.fillStyle = gl; ctx.fillRect(-8, -68, 46, 46);
-    ctx.fillStyle = "#efe9da"; ctx.fillRect(12.5, -42, 5, 10);
-    ctx.fillStyle = "#ffcf7a"; ctx.beginPath(); ctx.ellipse(15, -45 + Math.sin(t * 9) * 0.5, 2, 3.4, 0, 0, TAU); ctx.fill();
-  }
-  // col blanc
-  ctx.fillStyle = "#fbf8f2"; ctx.strokeStyle = INK; ctx.lineWidth = 1.8;
-  for (const side of [-1, 1]) {
-    ctx.beginPath(); ctx.moveTo(0, -59);
-    ctx.quadraticCurveTo(side * 11, -61, side * 10, -53);
-    ctx.quadraticCurveTo(side * 6, -49, 0, -54); ctx.closePath(); ctx.fill(); ctx.stroke();
-  }
-  // tresses (derrière les épaules, jusqu'à la poitrine)
-  for (const side of [-1, 1]) {
-    for (let i = 0; i < 5; i++) {
-      ctx.beginPath(); ctx.ellipse(side * (14 + i * 0.4), -72 + i * 5.2, 3.4, 3.2, side * 0.3, 0, TAU);
-      ctx.fillStyle = black; ctx.fill();
+// Sprites d'Ombeline (assets/ombeline, dessinés dans Figma) : tête = 200 px de large dans le fichier.
+// cx = centre de la tête, top = haut des cheveux, feet = bas des bottines (en pixels du fichier).
+const GIRL_META = {
+  amour: [129.8, 0.5, 362.1], boudeur: [100.4, 0.4, 325.1], clin: [100.4, 0.4, 357.1], content: [100.4, 0.4, 322],
+  dodo: [100.4, 0.4, 344.4], doree: [148.9, 1.5, 361.5], fatiguee: [100.4, 0.4, 341.6], jeu: [104.2, 0.5, 323.3],
+  miam: [100.4, 0.4, 330.8], paisible: [100.4, 0.4, 368], reclame: [100.4, 0.4, 324.9], sourire_a: [100.4, 0.4, 355.3],
+  sourire_b: [100.5, 0.5, 336.7], sourire_c: [100.5, 0.5, 342.8], sourire_d: [126, 0.4, 361.5], splash: [114.4, 0.4, 304.7],
+};
+const GIRL_SPRITES = Object.keys(GIRL_META);
+const GIRL_HEAD = 200;
+
+/** Robe recolorée (violette ou à rayures) : on repeint le gris foncé neutre de la robe, une fois, en cache. */
+const girlDressCache = {};
+function girlImage(key, tenue) {
+  const base = img[`ombeline_${key}`];
+  if (!base || !tenue || key === "doree") return base;
+  const id = `${key}|${tenue}`;
+  if (girlDressCache[id]) return girlDressCache[id];
+  const c = document.createElement("canvas");
+  c.width = base.width; c.height = base.height;
+  const g = c.getContext("2d");
+  g.drawImage(base, 0, 0);
+  try {
+    const data = g.getImageData(0, 0, c.width, c.height), d = data.data;
+    const [, top, feet] = GIRL_META[key];
+    const y0 = top + GIRL_HEAD * 0.95, y1 = feet - (feet - top) * 0.2; // sous la tête, au-dessus des jambes
+    for (let y = Math.max(0, Math.floor(y0)); y < Math.min(c.height, y1); y++) {
+      const stripe = Math.floor(y / 14) % 2 === 0;
+      for (let x = 0; x < c.width; x++) {
+        const i = (y * c.width + x) * 4, r = d[i], gg = d[i + 1], b = d[i + 2];
+        const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+        if (d[i + 3] < 200 || mx - mn > 7 || mx < 30 || mx > 80) continue; // seulement le tissu gris foncé
+        const k = mx / 42;
+        if (tenue === "robe_violette") { d[i] = 75 * k; d[i + 1] = 58 * k; d[i + 2] = 107 * k; }
+        else if (stripe) { d[i] = 107 * k; d[i + 1] = 101 * k; d[i + 2] = 117 * k; }
+      }
     }
-    if (outfit.tete === "noeuds_rouges") {
-      const bx = side * 16, by = -46.5;
-      ctx.fillStyle = "#b3263f";
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 4.5, by - 3); ctx.lineTo(bx - 4.5, by + 3); ctx.closePath();
-      ctx.moveTo(bx, by); ctx.lineTo(bx + 4.5, by - 3); ctx.lineTo(bx + 4.5, by + 3); ctx.closePath(); ctx.fill();
-      circle(bx, by, 1.4, "#8a1c30", null);
-    } else { ctx.fillStyle = "#fbf8f2"; ctx.fillRect(side * 16 - 2, -47.5, 4, 2); }
+    g.putImageData(data, 0, 0);
+  } catch {}
+  return (girlDressCache[id] = c);
+}
+
+/** Choix du dessin : humeur du moment, sinon sourire selon le palier (0 sérieuse → 3 rayonnante). */
+function girlKey(tier, { worried, cheer, night, mood }) {
+  if (mood && GIRL_META[mood]) return mood;
+  if (cheer) return "jeu";
+  if (night) return "dodo";
+  if (worried === "sec") return "fatiguee";
+  if (worried) return "reclame";
+  if (game.pet?.isDoree) return "doree";
+  return ["sourire_a", "sourire_b", "sourire_c", "sourire_d"][tier] || "paisible";
+}
+
+function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, mood = null, outfit = progress.girl || {}, scale = 1.3 } = {}) {
+  if (weatherNow() === "rain" && owns("parapluie") && scale > 1) outfit = { ...outfit, main: "parapluie" };
+  const key = girlKey(tier, { worried, cheer, night, mood });
+  const sprite = girlImage(key, outfit.tenue);
+  const [cx, top, bottom] = GIRL_META[key];
+  const s = (58 * scale / 1.3) / GIRL_HEAD; // tête ≈ 58 px à l'écran
+  const hop = key === "jeu" || tier >= 3 ? Math.max(0, Math.sin(t * 3)) * 2.5 : 0;
+  const breathe = 1 + Math.sin(t * 2) * 0.012;
+  ctx.save();
+  // ombre au sol
+  ctx.fillStyle = "rgba(29,27,34,0.2)";
+  ctx.beginPath(); ctx.ellipse(x, feet + 1, 24 * scale / 1.3, 4.5 * scale / 1.3, 0, 0, TAU); ctx.fill();
+  ctx.translate(x, feet - hop);
+  ctx.scale(s, s * breathe);
+  ctx.translate(-cx, -bottom);
+  const INK = C.COLORS.trait, black = "#1d1b22";
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  // coordonnées ci-dessous : pixels du fichier (tête de 200 px, centrée sur cx, sommet à top)
+  const hx = cx, eyeY = top + 124, handR = { x: cx + 72, y: bottom - 150 }, handL = { x: cx - 72, y: bottom - 150 };
+  if (outfit.main === "parapluie") {
+    ctx.strokeStyle = black; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(handR.x, handR.y); ctx.lineTo(handR.x - 20, top - 70); ctx.stroke();
+    ctx.beginPath(); ctx.arc(handR.x + 8, handR.y, 8, 0, Math.PI); ctx.stroke();
+    ctx.fillStyle = black;
+    const ux = hx + 4, uy = top - 60, R = 150;
+    ctx.beginPath(); ctx.moveTo(ux - R, uy); ctx.quadraticCurveTo(ux, uy - 120, ux + R, uy);
+    for (let i = 0; i < 4; i++) { const x0 = ux + R - i * (R / 2); ctx.quadraticCurveTo(x0 - R / 4, uy - 22, x0 - R / 2, uy); }
+    ctx.fill();
+    ctx.strokeStyle = "#4a4652"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(ux, uy - 70); ctx.lineTo(ux - 60, uy - 6); ctx.moveTo(ux, uy - 70); ctx.lineTo(ux + 60, uy - 6); ctx.stroke();
   }
-  // tête
-  circle(0, -76, 15, skin, INK, 2.2);
-  // cheveux : calotte + frange droite + raie au milieu
-  ctx.fillStyle = black;
-  ctx.beginPath(); ctx.arc(0, -76, 15.8, Math.PI * 1.02, Math.PI * 1.98); ctx.lineTo(13, -79); ctx.lineTo(-13, -79); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = "#4a4652"; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.moveTo(0, -91); ctx.lineTo(0, -85); ctx.stroke();
-  // yeux
-  ctx.fillStyle = black;
-  if (blink) { ctx.strokeStyle = black; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-7.5, -73); ctx.lineTo(-3.5, -73); ctx.moveTo(3.5, -73); ctx.lineTo(7.5, -73); ctx.stroke(); }
-  else { ctx.beginPath(); ctx.ellipse(-5.5, -73, 1.8, tier >= 3 ? 1.6 : 2.2, 0, 0, TAU); ctx.ellipse(5.5, -73, 1.8, tier >= 3 ? 1.6 : 2.2, 0, 0, TAU); ctx.fill(); }
-  if (worried) {
-    ctx.strokeStyle = black; ctx.lineWidth = 1.3;
-    ctx.beginPath(); ctx.moveTo(-8, -77); ctx.lineTo(-3.5, -78.5); ctx.moveTo(8, -77); ctx.lineTo(3.5, -78.5); ctx.stroke();
-  }
-  // joues
-  if (tier >= 2) {
-    ctx.fillStyle = tier >= 3 ? "rgba(240,140,160,0.55)" : "rgba(240,160,175,0.3)";
-    ctx.beginPath(); ctx.ellipse(-8.5, -68.5, 2.8, 1.8, 0, 0, TAU); ctx.ellipse(8.5, -68.5, 2.8, 1.8, 0, 0, TAU); ctx.fill();
-  }
-  // bouche selon le sourire
-  ctx.strokeStyle = black; ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  if (worried && tier < 3) { ctx.moveTo(-2.5, -66); ctx.quadraticCurveTo(0, -67.5, 2.5, -66); ctx.stroke(); }
-  else if (tier === 0) { ctx.moveTo(-3, -67); ctx.lineTo(3, -67); ctx.stroke(); }
-  else if (tier === 1) { ctx.moveTo(-3, -67); ctx.lineTo(1.5, -67); ctx.quadraticCurveTo(3, -67, 3.6, -68.3); ctx.stroke(); }
-  else if (tier === 2) { ctx.moveTo(-3.5, -67.8); ctx.quadraticCurveTo(0, -65, 3.5, -67.8); ctx.stroke(); }
-  else { ctx.moveTo(-4.5, -68); ctx.quadraticCurveTo(0, -61.5, 4.5, -68); ctx.closePath(); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.stroke(); }
+  if (sprite) ctx.drawImage(sprite, 0, 0);
   // --- garde-robe achetée à la boutique ---
-  if (outfit.yeux === "lunettes") {
-    ctx.strokeStyle = black; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.arc(-5.5, -73, 3.9, 0, TAU); ctx.moveTo(9.4, -73); ctx.arc(5.5, -73, 3.9, 0, TAU); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-1.6, -73.5); ctx.quadraticCurveTo(0, -75, 1.6, -73.5); ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.beginPath(); ctx.arc(-6.5, -74.5, 1.2, 0, TAU); ctx.arc(4.5, -74.5, 1.2, 0, TAU); ctx.fill();
+  if (outfit.yeux === "lunettes" && key !== "dodo") {
+    ctx.strokeStyle = black; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(hx - 30, eyeY, 24, 0, TAU); ctx.moveTo(hx + 54, eyeY); ctx.arc(hx + 30, eyeY, 24, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hx - 7, eyeY - 3); ctx.quadraticCurveTo(hx, eyeY - 10, hx + 7, eyeY - 3); ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.beginPath(); ctx.arc(hx - 38, eyeY - 9, 6, 0, TAU); ctx.arc(hx + 22, eyeY - 9, 6, 0, TAU); ctx.fill();
   }
-  if (outfit.tete === "beret") {
-    ctx.save(); ctx.translate(-2, -90); ctx.rotate(-0.18);
-    ctx.beginPath(); ctx.ellipse(0, 0, 16, 6.5, 0, 0, TAU); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.8; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(1.5, -10); ctx.lineWidth = 2; ctx.stroke();
+  if (outfit.tete === "noeuds_rouges") {
+    for (const side of [-1, 1]) {
+      const bx = hx + side * 74, by = top + 46;
+      ctx.fillStyle = "#b3263f"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 24, by - 16); ctx.lineTo(bx - 24, by + 16); ctx.closePath();
+      ctx.moveTo(bx, by); ctx.lineTo(bx + 24, by - 16); ctx.lineTo(bx + 24, by + 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx, by, 7, 0, TAU); ctx.fillStyle = "#8a1c30"; ctx.fill(); ctx.stroke();
+    }
+  } else if (outfit.tete === "beret") {
+    ctx.save(); ctx.translate(hx - 10, top + 8); ctx.rotate(-0.18);
+    ctx.beginPath(); ctx.ellipse(0, 0, 92, 34, 0, 0, TAU); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(8, -52); ctx.lineWidth = 8; ctx.stroke();
     ctx.restore();
   } else if (outfit.tete === "cloche") {
-    ctx.fillStyle = black; ctx.strokeStyle = INK; ctx.lineWidth = 1.8;
-    ctx.beginPath(); ctx.ellipse(0, -84, 20, 4.5, 0, 0, TAU); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(-14, -84); ctx.bezierCurveTo(-15, -101, 15, -101, 14, -84); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#6c5a9c"; ctx.fillRect(-14, -88.5, 28, 3.4);
-    circle(9, -87, 2.2, "#b3263f", null);
+    ctx.fillStyle = black; ctx.strokeStyle = INK; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.ellipse(hx, top + 34, 124, 24, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx - 86, top + 34); ctx.bezierCurveTo(hx - 92, top - 70, hx + 92, top - 70, hx + 86, top + 34); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#6c5a9c"; ctx.fillRect(hx - 86, top + 8, 172, 18);
+    ctx.beginPath(); ctx.arc(hx + 56, top + 16, 12, 0, TAU); ctx.fillStyle = "#b3263f"; ctx.fill();
   }
   if (outfit.main === "bouquet") {
-    ctx.strokeStyle = "#3f5a36"; ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.moveTo(hand.x, hand.y); ctx.lineTo(hand.x - 3, hand.y - 9); ctx.moveTo(hand.x, hand.y); ctx.lineTo(hand.x + 3, hand.y - 9); ctx.stroke();
-    for (const [dx, dy] of [[-3.5, -11], [3.5, -11], [0, -14]]) circle(hand.x + dx, hand.y + dy, 3.2, "#8c2a45", INK, 1.2);
+    const { x: bx, y: by } = handR;
+    ctx.strokeStyle = "#3f5a36"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(bx, by + 20); ctx.lineTo(bx - 14, by - 34); ctx.moveTo(bx, by + 20); ctx.lineTo(bx + 14, by - 34); ctx.moveTo(bx, by + 20); ctx.lineTo(bx, by - 40); ctx.stroke();
+    for (const [dx, dy] of [[-18, -42], [18, -42], [0, -58]]) circle(bx + dx, by + dy, 17, "#8c2a45", INK, 5);
   } else if (outfit.main === "peluche") {
-    const bx = lhand.x, by = lhand.y - 4;
-    ctx.fillStyle = "#3a3444";
-    ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx - 6, by - 7, bx - 11, by - 2); ctx.quadraticCurveTo(bx - 7, by + 1, bx - 4, by + 4);
-    ctx.quadraticCurveTo(bx, by + 2, bx + 4, by + 4); ctx.quadraticCurveTo(bx + 7, by + 1, bx + 11, by - 2); ctx.quadraticCurveTo(bx + 6, by - 7, bx, by); ctx.fill();
-    circle(bx, by - 1, 4.2, "#3a3444", INK, 1.2);
-    ctx.fillStyle = "#f4f0ea"; ctx.beginPath(); ctx.arc(bx - 1.5, by - 2, 0.9, 0, TAU); ctx.arc(bx + 1.5, by - 2, 0.9, 0, TAU); ctx.fill();
+    const bx = handL.x, by = handL.y;
+    ctx.fillStyle = "#3a3444"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx - 30, by - 36, bx - 56, by - 10); ctx.quadraticCurveTo(bx - 36, by + 6, bx - 20, by + 20);
+    ctx.quadraticCurveTo(bx, by + 10, bx + 20, by + 20); ctx.quadraticCurveTo(bx + 36, by + 6, bx + 56, by - 10); ctx.quadraticCurveTo(bx + 30, by - 36, bx, by); ctx.fill(); ctx.stroke();
+    circle(bx, by - 4, 21, "#3a3444", INK, 5);
+    ctx.fillStyle = "#f4f0ea"; ctx.beginPath(); ctx.arc(bx - 8, by - 9, 4.5, 0, TAU); ctx.arc(bx + 8, by - 9, 4.5, 0, TAU); ctx.fill();
+  }
+  // bougie la nuit (si la main est libre)
+  if (night && !outfit.main && key !== "dodo") {
+    const lx = handR.x + 16, ly = handR.y + 10;
+    const gl = ctx.createRadialGradient(lx, ly - 40, 0, lx, ly - 40, 110);
+    gl.addColorStop(0, "rgba(255,207,122,0.5)"); gl.addColorStop(1, "rgba(255,207,122,0)");
+    ctx.fillStyle = gl; ctx.fillRect(lx - 110, ly - 150, 220, 220);
+    ctx.fillStyle = "#efe9da"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.roundRect(lx - 12, ly - 30, 24, 50, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#ffcf7a"; ctx.beginPath(); ctx.ellipse(lx, ly - 46 + Math.sin(t * 9) * 2, 9, 16, 0, 0, TAU); ctx.fill();
   }
   ctx.restore();
 }
@@ -1267,6 +1269,7 @@ class PondScene {
     this.visitorDelay = 6;
     this.dialog = null; // fenêtre « nouvelle génération »
     this.picker = false; // choix du mini-jeu
+    this.girlMoodT = 0; this.girlMood = null;
     this.girlJoy = 0; // Ombeline sourit un peu plus pendant un instant après un soin
     this.girlTalk = 0;
     this.lastAmbient = ambientMood(game.pet);
@@ -1382,6 +1385,7 @@ class PondScene {
       record("lettre");
       this.letter = null;
       this.girlJoy = 2;
+      this.setGirlMood("content", 3);
       this.say("Tu peux répondre à papa dans le grimoire (onglet Lettres).", 4);
       this.particles.burst(C.W / 2, L.charBottom - 60, null, { count: 14, speed: 80, life: 1.6, radius: 5, gravity: -15, shape: "heart" });
     });
@@ -1420,6 +1424,9 @@ class PondScene {
   }
 
   // ------------------------------------------------------------ Ombeline
+  /** Ombeline change d'expression un instant (amour, miam, splash, clin…). */
+  setGirlMood(mood, secs = 2) { if (mood) { this.girlMood = mood; this.girlMoodT = secs; } }
+
   girlFeet() { return L.pond.cy + 50; } // debout sur la berge, au-dessus des messages
 
   girlTier() {
@@ -1447,6 +1454,7 @@ class PondScene {
     const lines = GIRL_LINES[tier];
     this.say(`${GIRL.name} : « ${lines[Math.floor(Math.random() * lines.length)].replace("{p}", player.name)} »`, 3.4);
     this.girlJoy = 1.2;
+    this.setGirlMood(tier >= 2 && Math.random() < 0.35 ? "clin" : "content", 2.4);
     audio.playNote(tier >= 2 ? 659 : 330, 0.18);
     record("ombeline");
   }
@@ -1669,6 +1677,7 @@ class PondScene {
       return;
     }
     this.girlJoy = 1.6;
+    this.setGirlMood({ calin: "amour", miam: "miam", baignade: "splash" }[name], 2.2);
     record({ calin: "calin", miam: "miam", baignade: "bain" }[name]);
     if (name === "baignade" && poopsBefore) record("caca", poopsBefore);
     const mood = { calin: "amour", miam: "miam", baignade: "splash" }[name];
@@ -1695,7 +1704,7 @@ class PondScene {
     const pet = this.pet;
     this.t += dt;
     if (this.actionMood && (this.actionTimer -= dt) <= 0) this.actionMood = null;
-    for (const k of ["celebrate", "bounce", "shake", "pressTimer", "petTapCooldown", "eggWobble", "girlJoy"]) {
+    for (const k of ["celebrate", "bounce", "shake", "pressTimer", "petTapCooldown", "eggWobble", "girlJoy", "girlMoodT"]) {
       this[k] = Math.max(0, this[k] - dt);
     }
     if (this.toast && (this.toast.t -= dt) <= 0) this.toast = null;
@@ -1805,7 +1814,7 @@ class PondScene {
     drawWeatherGround(night, this.t);
     if (pet.isEgg) {
       this.drawEgg();
-      if (GOTH) drawGirl(GIRL.x, this.girlFeet(), this.girlTier(), this.t, night, { blink: (this.t % 4.2) < 0.13 });
+      if (GOTH) drawGirl(GIRL.x, this.girlFeet(), this.girlTier(), this.t, night);
     }
     else {
       this.drawDecorItems(night);
@@ -1813,9 +1822,8 @@ class PondScene {
       this.drawCouple(night);
       this.drawCharacter(night);
       if (GOTH) {
-        const blink = (this.t % 4.2) < 0.13;
         drawGirl(GIRL.x, this.girlFeet(), this.girlTier(), this.t, night,
-          { worried: ambientMood(this.pet) === "reclame" || ambientMood(this.pet) === "sec", blink, cheer: this.girlJoy > 0.7 });
+          { worried: { reclame: true, sec: "sec" }[ambientMood(this.pet)] || false, cheer: this.girlJoy > 0.7 && !(this.girlMoodT > 0), mood: this.girlMoodT > 0 ? this.girlMood : null });
       }
       this.drawBubble(night);
     }
@@ -3134,7 +3142,7 @@ class BookScene {
       // aperçu
       const cx = x + colW / 2, cy = yy + 62;
       if (item.kind === "ombeline") {
-        drawGirl(cx, yy + 88, 2, this.t, false, { outfit: { [item.slot]: item.id }, scale: item.id === "parapluie" ? 0.6 : 0.7 });
+        drawGirl(cx, yy + 88, 2, this.t, false, { outfit: { [item.slot]: item.id }, scale: item.id === "parapluie" ? 0.72 : 0.92 });
       } else if (item.kind === "chapeau") {
         const k = "grenouille_paisible", sp = img[k];
         if (sp) {
@@ -3351,6 +3359,7 @@ async function start() {
   window.addEventListener("resize", resize);
   await Promise.all([
     ...ALL_SPRITES.map((n) => loadImage(n, `assets/sprites/${n}.png?v=${ASSET_V}`)),
+    ...GIRL_SPRITES.map((n) => loadImage(`ombeline_${n}`, `assets/ombeline/${n}.png?v=${ASSET_V}`)),
     document.fonts?.load(`600 16px ${FONTS.body}`).catch(() => {}),
     document.fonts?.load(`600 20px ${FONTS.title}`).catch(() => {}),
   ]);

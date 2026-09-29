@@ -1,6 +1,6 @@
 // Cache hors-ligne : tout le jeu est mis en cache à l'installation.
 // Réseau d'abord (les mises à jour arrivent dès qu'il y a du réseau), cache en secours hors-ligne.
-const VERSION = "cookigotchi-v25";
+const VERSION = "cookigotchi-v26";
 const FILES = [
   "./",
   "assets/sprites/grenouille_amour.png",
@@ -30,6 +30,22 @@ const FILES = [
   "assets/sprites/tetard_paisible.png",
   "assets/sprites/tetard_reclame.png",
   "assets/sprites/tetard_sec.png",
+  "assets/ombeline/amour.png",
+  "assets/ombeline/boudeur.png",
+  "assets/ombeline/clin.png",
+  "assets/ombeline/content.png",
+  "assets/ombeline/dodo.png",
+  "assets/ombeline/doree.png",
+  "assets/ombeline/fatiguee.png",
+  "assets/ombeline/jeu.png",
+  "assets/ombeline/miam.png",
+  "assets/ombeline/paisible.png",
+  "assets/ombeline/reclame.png",
+  "assets/ombeline/sourire_a.png",
+  "assets/ombeline/sourire_b.png",
+  "assets/ombeline/sourire_c.png",
+  "assets/ombeline/sourire_d.png",
+  "assets/ombeline/splash.png",
   "codes.json",
   "fonts/fredoka-latin.woff2",
   "fonts/grenze-gotisch.woff2",
