@@ -35,21 +35,21 @@ export const HATCH_SECONDS = 60; // l'œuf éclot en 1 min (chaque tap l'aide un
 export const HATCH_TAP_BONUS = 4;
 export const AWAKE_AFTER_HATCH_MIN = 20;
 const H = 3600 * 1000;
-// Bébé têtard 2 h, enfant jusqu'au 2e jour, ado jusqu'au 7e, puis adulte (amour, famille).
+// Bébé têtard 6 h, enfant jusqu'au 4e jour, ado jusqu'au 10e, puis adulte (amour, famille).
 export const STAGES = [
   { id: "tetard", label: "Bébé têtard", from: 0 },
-  { id: "grenouillette", label: "Grenouillette", from: 2 * H }, // enfant, après 2 heures
-  { id: "grenouille", label: "Jeune grenouille", from: 48 * H }, // ado, après 2 jours
-  { id: "adulte", label: "Grenouille adulte", from: 168 * H }, // adulte, après 7 jours
+  { id: "grenouillette", label: "Grenouillette", from: 6 * H }, // enfant, après 6 heures
+  { id: "grenouille", label: "Jeune grenouille", from: 96 * H }, // ado, après 4 jours
+  { id: "adulte", label: "Grenouille adulte", from: 240 * H }, // adulte, après 10 jours
 ];
-// Grenouille dorée : adulte depuis au moins 2 jours ET bonheur moyen élevé (récupérable).
-export const DOREE_AGE = 240 * H; // grenouille dorée possible dès le 10e jour
+// Grenouille dorée : adulte depuis au moins 4 jours ET bonheur moyen élevé (récupérable).
+export const DOREE_AGE = 336 * H; // grenouille dorée possible dès le 14e jour
 export const DOREE_BONHEUR = 75;
-// Famille : un amoureux passe quand la grenouille adulte est heureuse (dès le 4e jour),
-// puis le couple pond un œuf 12 h plus tard.
-export const MEET_AGE = 168 * H; // les amoureux passent une fois adulte
+// Famille : un amoureux passe quand la grenouille adulte est heureuse (dès le 10e jour),
+// puis le couple pond un œuf 36 h plus tard.
+export const MEET_AGE = 240 * H; // les amoureux passent une fois adulte
 export const MEET_BONHEUR = 55;
-export const FAMILY_EGG_AFTER = 24 * H;
+export const FAMILY_EGG_AFTER = 36 * H;
 // Le bonheur suit lentement la moyenne des besoins (moyenne glissante sur ~12 h).
 export const BONHEUR_HALF_LIFE_H = 12;
 
