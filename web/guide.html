@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Comment jouer · Cookigotchi</title>
+  <meta name="description" content="Le guide de la mare : tout pour bien t'occuper de ta grenouille.">
+  <meta name="theme-color" content="#fff5e1">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="preload" href="fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    try { if (localStorage.getItem("froggotchi-theme") === "gothique") document.documentElement.classList.add("gothique"); }
+    catch {}
+  </script>
+  <style>
+    @font-face { font-family: "Special Elite"; font-display: swap; src: url("fonts/special-elite.woff2") format("woff2"); }
+    @font-face { font-family: "Grenze Gotisch"; font-weight: 600; font-display: swap; src: url("fonts/grenze-gotisch.woff2") format("woff2"); }
+    .gothique { --ink: #1d1b22; --cream: #d9d5d6; --paper: #f4f0ea; --muted: #5b5563; --jaune: #ece3c8; --vert: #d3ddd0; }
+    .gothique body { font-family: "Special Elite", "Courier New", monospace; font-size: 15px; }
+    .gothique h1, .gothique h2 { font-family: "Grenze Gotisch", Georgia, serif; font-weight: 600; }
+    .gothique h1 { font-size: 40px; }
+    .gothique h2 { font-size: 26px; }
+    .gothique .card { border-radius: 10px; box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); }
+    .gothique .hero img, .gothique .stages img { filter: saturate(.5); }
+    .gothique .love { background: #f1e6e8; }
+    .gothique .secret { background: #efe7d2; }
+    .gothique .back { background: var(--ink); color: var(--paper); box-shadow: 0 5px 0 #5b5563; border-radius: 10px; } font-weight: 300 700; font-display: swap; src: url("fonts/fredoka-latin.woff2") format("woff2"); }
+    :root {
+      --ink: #3a4a30; --cream: #fff5e1; --paper: #fffdf5; --muted: #6b5a50;
+      --rose: #ffd1dc; --jaune: #fff7b0; --vert: #c8e6c9; --lavande: #d6d1ff; --bleu: #d1f5ff; --peche: #ffe3c4;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--cream); color: var(--ink);
+      font: 500 16px/1.5 Fredoka, ui-rounded, system-ui, sans-serif;
+      padding: env(safe-area-inset-top) 16px calc(32px + env(safe-area-inset-bottom));
+    }
+    main { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 30px; line-height: 1.1; margin: 8px 0 4px; letter-spacing: -.01em; text-wrap: balance; }
+    h2 { font-size: 21px; margin: 0 0 8px; display: flex; align-items: center; gap: 10px; }
+    p { margin: 0 0 10px; text-wrap: pretty; }
+    b { font-weight: 700; }
+    .hero { text-align: center; padding: 28px 0 8px; }
+    .hero img { width: 130px; animation: hop 1.2s ease-in-out infinite; filter: drop-shadow(0 6px 0 rgba(58,74,48,.14)); }
+    .hero p { color: var(--muted); font-weight: 600; }
+    @keyframes hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 40% { transform: translateY(-12px) scale(.97, 1.04); } 60% { transform: translateY(0) scale(1.05, .95); } }
+    .card {
+      background: var(--paper); border: 3px solid var(--ink); border-radius: 24px;
+      padding: 18px 18px 14px; margin: 18px 0; box-shadow: 0 5px 0 rgba(58,74,48,.16);
+    }
+    .num {
+      flex: none; width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--ink);
+      display: grid; place-items: center; font-size: 16px; background: var(--jaune);
+    }
+    .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+    .row + .row { border-top: 2px dashed #eadfcd; }
+    .row p { margin: 0; }
+    .bubble {
+      flex: none; width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--ink);
+      display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink);
+    }
+    .bubble canvas { width: 28px; height: 28px; }
+    .gauge { flex: none; display: flex; align-items: center; gap: 6px; width: 104px; }
+    .gauge canvas { width: 22px; height: 22px; }
+    .gauge span { flex: 1; height: 12px; border: 2.5px solid var(--ink); border-radius: 8px; overflow: hidden; background: #fff; }
+    .gauge i { display: block; height: 100%; }
+    .steps { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: s; }
+    .steps li { counter-increment: s; position: relative; padding: 6px 0 6px 40px; }
+    .steps li::before {
+      content: counter(s); position: absolute; left: 0; top: 5px; width: 28px; height: 28px; border-radius: 50%;
+      border: 2.5px solid var(--ink); background: var(--vert); display: grid; place-items: center; font-weight: 700; font-size: 14px;
+    }
+    .stages { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; margin: 10px 0 6px; }
+    .stages figure { margin: 0; text-align: center; flex: 1; }
+    .stages img { display: block; margin: 0 auto 6px; max-width: 100%; }
+    .stages figcaption { font-size: 13px; font-weight: 700; }
+    .stages small { display: block; font-weight: 500; color: var(--muted); }
+    .tip { background: var(--jaune); border: 2.5px solid var(--ink); border-radius: 16px; padding: 10px 12px; margin: 10px 0 4px; font-weight: 600; }
+    .games .row { align-items: flex-start; }
+    .secret { background: linear-gradient(160deg, #fff7c8, #fde8b0); }
+    .love { background: linear-gradient(160deg, #fff0f4, #ffe3ec); }
+    .end { text-align: center; }
+    .end .sign { font-size: 20px; font-weight: 700; margin-top: 4px; }
+    .back {
+      display: block; text-align: center; text-decoration: none; color: var(--ink); font-weight: 700; font-size: 18px;
+      background: var(--vert); border: 3px solid var(--ink); border-radius: 20px; padding: 14px; margin: 24px 0 8px;
+      box-shadow: 0 5px 0 var(--ink); transition: transform .08s, box-shadow .08s;
+    }
+    .back:active { transform: translateY(5px); box-shadow: 0 0 0 var(--ink); }
+    .back:focus-visible { outline: 4px solid var(--rose); outline-offset: 3px; }
+    .top-back { display: inline-block; margin-top: 12px; color: var(--ink); font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+<main>
+  <a class="top-back" href="./">← Retour à la mare</a>
+
+  <header class="hero">
+    <img src="assets/sprites/grenouille_content.png" alt="Une grenouille verte toute contente">
+    <h1>Cookigotchi</h1>
+    <p><b>Le guide de la mare</b></p>
+    <p id="hello">Tout ce qu'il faut savoir pour chouchouter ta grenouille.</p>
+  </header>
+
+  <section class="card">
+    <h2><span class="num">1</span> Mets le jeu sur ton téléphone</h2>
+    <ol class="steps">
+      <li>Ouvre le lien du jeu dans <b>Chrome</b>.</li>
+      <li>Touche les <b>trois petits points ⋮</b> en haut à droite.</li>
+      <li>Choisis <b>« Ajouter à l'écran d'accueil »</b> (ou « Installer l'application »).</li>
+    </ol>
+    <p>L'appli <b>Cookigotchi</b> apparaît avec tes autres applis. Elle marche même sans internet.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">2</span> Ton œuf</h2>
+    <p>Au début, il y a juste un œuf sur un nénuphar. <b>Tapote-le</b> pour l'aider à éclore : plus tu tapotes, plus il éclot vite !</p>
+    <p>Quand il éclot, c'est toi qui choisis <b>le prénom</b> de ton têtard. Pas d'idée ? Touche « Autre idée ».</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">3</span> Les 4 jauges</h2>
+    <p>En haut de l'écran, 4 jauges te disent comment va ta grenouille. Plus elles sont pleines, mieux elle se sent.</p>
+    <div class="row"><div class="gauge"><canvas data-icon="amour"></canvas><span><i style="width:80%;background:#f27a9b"></i></span></div><p><b>Amour</b> : elle a besoin de câlins.</p></div>
+    <div class="row"><div class="gauge"><canvas data-icon="faim"></canvas><span><i style="width:60%;background:#eab53c"></i></span></div><p><b>Faim</b> : son ventre gargouille.</p></div>
+    <div class="row"><div class="gauge"><canvas data-icon="energie"></canvas><span><i style="width:70%;background:#8f80ec"></i></span></div><p><b>Énergie</b> : elle est pleine de pep's ou fatiguée.</p></div>
+    <div class="row"><div class="gauge"><canvas data-icon="fraicheur"></canvas><span><i style="width:90%;background:#46aee0"></i></span></div><p><b>Propreté</b> : toute propre, ou il faut un bain.</p></div>
+    <p class="tip">Quand ta grenouille a besoin de quelque chose, une <b>bulle</b> apparaît au-dessus de sa tête avec l'icône du besoin. Facile !</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">4</span> Les boutons</h2>
+    <div class="row"><div class="bubble" style="background:var(--rose)"><canvas data-icon="calin"></canvas></div><p><b>Câlin</b> : un gros câlin qui remplit l'amour. Tu peux aussi toucher ta grenouille directement !</p></div>
+    <div class="row"><div class="bubble" style="background:var(--jaune)"><canvas data-icon="miam"></canvas></div><p><b>Miam</b> : un cookie. Si elle n'a plus faim, elle dit non !</p></div>
+    <div class="row"><div class="bubble" style="background:var(--vert)"><canvas data-icon="jeu"></canvas></div><p><b>Jeu</b> : choisis un mini-jeu. Jouer la rend heureuse… et un peu fatiguée.</p></div>
+    <div class="row"><div class="bubble" style="background:var(--lavande)"><canvas data-icon="dodo"></canvas></div><p><b>Dodo</b> : une petite sieste quand elle est fatiguée. Touche encore pour la réveiller.</p></div>
+    <div class="row"><div class="bubble" style="background:var(--bleu)"><canvas data-icon="baignade"></canvas></div><p><b>Bain</b> : plouf ! Elle redevient toute propre.</p></div>
+    <div class="row"><div class="bubble" style="background:var(--peche)"><canvas data-icon="nounou"></canvas></div><p><b>Nounou</b> : met tout en pause (explications juste en dessous).</p></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">5</span> Le mode Nounou</h2>
+    <p>Tu pars à l'école ou chez une copine ? Active <b>Nounou</b> (la petite maison) : le temps s'arrête pour ta grenouille, et elle ne s'ennuie pas.</p>
+    <p>Quand tu reviens, touche n'importe quel bouton et elle se réveille, toute contente de te voir.</p>
+    <p><b>Pendant l'école</b> (en semaine, de 8h15 à 16h30, et le mercredi jusqu'à midi), la mare se met en pause toute seule : ta grenouille ne réclame rien pendant que tu es en classe.</p>
+    <p><b>Pas école aujourd'hui ?</b> (congé, jour férié, malade…) Touche Ombeline et choisis « Pas d'école aujourd'hui ». Pour les <b>vacances</b>, va dans les réglages (la roue dentée) et coupe « École auto ».</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">6</span> Toute propre</h2>
+    <p>Petit à petit, ta grenouille se salit (c'est une grenouille, après tout). Quand la jauge bleue baisse, donne-lui un <b>bain</b> : plouf, et elle redevient toute propre.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">7</span> Le jour et la nuit</h2>
+    <p>Ta grenouille vit en même temps que toi. <b>Le soir, à partir de 20h</b>, elle s'endort toute seule sous les étoiles, et elle se réveille <b>à 7h</b>.</p>
+    <p>Pendant la nuit, chut… Elle se repose et ses jauges baissent beaucoup moins vite. Tu la retrouves le matin en pleine forme.</p>
+  </section>
+
+  <section class="card games">
+    <h2><span class="num">8</span> Les mini-jeux</h2>
+    <div class="row"><div class="bubble" style="background:var(--vert)"><canvas data-icon="mouche"></canvas></div><p><b>Gobe-mouches</b> : touche un insecte, et hop, ta grenouille tire la langue ! Mouche +1, luciole +3, libellule +5. Enchaîne les prises pour des <b>combos</b> ×2, ×3, ×4. Mais <b>attention aux guêpes</b> jaunes et noires : −3 et la tête qui tourne !</p></div>
+    <div class="row"><div class="bubble" style="background:var(--lavande)"><canvas data-icon="bulles"></canvas></div><p><b>Chanson des bulles</b> : les bulles s'allument en musique. Retiens l'ordre et rejoue-le. Chaque manche ajoute une note… jusqu'où iras-tu ?</p></div>
+    <div class="row"><div class="bubble" style="background:var(--jaune)"><canvas data-icon="feuille"></canvas></div><p><b>Cache-cache</b> : un petit têtard se cache sous une feuille, puis les feuilles se mélangent. Suis-la des yeux et trouve-le !</p></div>
+    <p class="tip">Chaque jeu garde ton <b>record</b>. Essaie d'avoir les 3 étoiles au Gobe-mouches !</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">9</span> Ta grenouille grandit</h2>
+    <p>Elle grandit pour de vrai, jour après jour. La petite barre verte en haut montre quand elle va changer.</p>
+    <div class="stages">
+      <figure><img src="assets/sprites/tetard_content.png" alt="Un têtard" style="width:56px"><figcaption>Bébé<small>2 premières heures</small></figcaption></figure>
+      <figure><img src="assets/sprites/grenouillette_content.png" alt="Une grenouillette" style="width:66px"><figcaption>Enfant<small>jusqu'au jour 2</small></figcaption></figure>
+      <figure><img src="assets/sprites/grenouille_content.png" alt="Une jeune grenouille" style="width:74px"><figcaption>Ado<small>jours 3 à 7</small></figcaption></figure>
+      <figure><img src="assets/sprites/grenouille_content.png" alt="Une grenouille adulte" style="width:88px"><figcaption>Adulte<small>dès le jour 8</small></figcaption></figure>
+    </div>
+  </section>
+
+  <section class="card love">
+    <h2><span class="num">10</span> L'amour et la famille</h2>
+    <p>Quand ta grenouille est <b>adulte</b> (au bout d'une semaine) et <b>heureuse</b>, un jour, une autre grenouille vient lui rendre visite, avec un cœur au-dessus de la tête. <b>Touche-la</b> : coup de cœur !</p>
+    <p>Un peu plus tard, un <b>œuf</b> apparaît sur la mare. Quand tu es prête, touche-le : les parents partent vivre à la <b>Grande Mare</b>, et c'est toi qui t'occupes de leur bébé. Il aura un mélange de leurs couleurs !</p>
+    <p>Touche le <b>bouton aux deux cœurs</b> (en haut) pour voir l'album de ta famille de grenouilles.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">☾</span> Ombeline et le sourire</h2>
+    <p>Sur la berge, il y a <b>Ombeline</b>, la gardienne de la mare. Elle ne sourit jamais. Enfin… presque jamais. Touche-la : elle a toujours quelque chose à dire.</p>
+    <p>Au début, la mare est grise et ta grenouille reste impassible. Mais à chaque câlin, chaque cookie, chaque partie, <b>elle sourit un peu plus</b> — et Ombeline aussi. Petit à petit, les roses rougissent, le soleil perce la brume… Et si tu vas jusqu'au bout, il paraît qu'un <b>arc-en-ciel</b> apparaît.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">🪙</span> Les pièces et la boutique</h2>
+    <p>Tu gagnes des <b>pièces</b> en jouant aux mini-jeux, en finissant tes <b>quêtes du jour</b>, en débloquant des <b>succès</b>… et juste en venant voir ta grenouille chaque jour.</p>
+    <p><b>Touche tes pièces</b> (en haut de l'écran) pour ouvrir <b>la boutique d'Ombeline</b> : des chapeaux pour ta grenouille et des décorations pour la mare. Quand tu as assez de pièces pour un achat, le compteur se met à briller.</p>
+    <p>Le <b>livre violet</b> à côté, c'est ton grimoire : tes quêtes, tes succès et ta famille.</p>
+    <p><b>Un code secret de papa ?</b> Touche la roue dentée en haut à droite, puis « Code secret », et tape le mot qu'il t'a donné. Surprise garantie.</p>
+  </section>
+
+  <section class="card secret">
+    <h2><span class="num">★</span> Le secret de la grenouille dorée</h2>
+    <p>Si tu prends très bien soin de ta grenouille adulte, au bout de 10 jours, elle peut devenir… <b>dorée</b>, avec une petite couronne. Chut, c'est un secret.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">?</span> Et si j'oublie ?</h2>
+    <p>Pas de panique : <b>ta grenouille ne meurt jamais</b>. Si tu l'oublies un peu, elle devient boudeuse ou toute sèche et grise. Quelques câlins, un bain et un cookie, et elle redevient toute belle.</p>
+  </section>
+
+  <section class="card end">
+    <p>Voilà, tu sais tout ! Amuse-toi bien à la mare.</p>
+    <p class="sign" id="sign"></p>
+  </section>
+
+  <a class="back" href="./">Retour à la mare</a>
+</main>
+
+<script type="module">
+  import { drawIcon } from "./js/icons.js";
+  const BUBBLES = ["#f27a9b", "#eab53c", "#8f80ec", "#46aee0"];
+  for (const c of document.querySelectorAll("canvas[data-icon]")) {
+    const size = parseFloat(getComputedStyle(c).width) || 24;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = c.height = Math.round(size * dpr);
+    const ctx = c.getContext("2d");
+    ctx.scale(dpr, dpr);
+    const name = c.dataset.icon;
+    if (name === "bulles") {
+      BUBBLES.forEach((col, i) => {
+        ctx.beginPath(); ctx.arc(size / 2 + (i % 2 ? 6 : -6), size / 2 + (i < 2 ? -6 : 6), 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = "#3a4a30"; ctx.stroke();
+      });
+    } else if (name === "feuille") {
+      const x = size / 2, y = size / 2 + 7;
+      ctx.beginPath(); ctx.moveTo(x - 12, y); ctx.bezierCurveTo(x - 12, y - 18, x + 12, y - 18, x + 12, y);
+      ctx.quadraticCurveTo(x, y + 3, x - 12, y);
+      ctx.fillStyle = "#a8d8a0"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#3a4a30"; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x, y + 1); ctx.stroke();
+    } else {
+      drawIcon(ctx, name, size / 2, size / 2, size);
+    }
+  }
+  // Petit mot perso (prénom et signature viennent du lien envoyé, gardés sur le téléphone).
+  try {
+    let who = localStorage.getItem("froggotchi-joueuse");
+    if (!who) { try { who = (await (await fetch("perso.json")).json()).prenom; } catch {} }
+    const from = localStorage.getItem("froggotchi-de");
+    if (who) document.getElementById("hello").textContent = `Tout ce qu'il faut savoir pour chouchouter ta grenouille, ${who}.`;
+    if (from) document.getElementById("sign").textContent = `Gros bisous, ${from}`;
+  } catch {}
+</script>
+</body>
+</html>

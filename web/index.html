@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Cookigotchi</title>
+  <script>
+    // Lien personnalisé : ?pour=Prénom&de=Papa (retenu sur le téléphone, jamais écrit dans le code).
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get("pour")) localStorage.setItem("froggotchi-joueuse", q.get("pour").trim().slice(0, 20));
+      if (q.get("de")) localStorage.setItem("froggotchi-de", q.get("de").trim().slice(0, 20));
+    } catch {}
+  </script>
+  <meta name="description" content="Ta petite grenouille à chouchouter.">
+  <meta property="og:title" content="Cookigotchi">
+  <meta property="og:description" content="Ta petite grenouille à chouchouter, de l'œuf à toute une famille.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <meta name="theme-color" content="#1d1b22">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cookigotchi">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preload" href="fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/special-elite.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/grenze-gotisch.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    try { if (localStorage.getItem("froggotchi-theme") === "gothique") document.documentElement.classList.add("gothique"); }
+    catch {}
+  </script>
+  <style>
+    @font-face {
+      font-family: "Fredoka"; font-weight: 300 700; font-display: swap;
+      src: url("fonts/fredoka-latin.woff2") format("woff2");
+    }
+    @font-face { font-family: "Special Elite"; font-display: swap; src: url("fonts/special-elite.woff2") format("woff2"); }
+    @font-face { font-family: "Grenze Gotisch"; font-weight: 600; font-display: swap; src: url("fonts/grenze-gotisch.woff2") format("woff2"); }
+    /* Thème gothique (par défaut) : papier os, encre noire, machine à écrire + titres gothiques */
+    .gothique body { background: #b3aeb8; }
+    .gothique #sheet { font-family: "Special Elite", "Courier New", monospace; color: #1d1b22; background: rgba(14, 12, 19, .5); }
+    .gothique #sheet .card { background: #f4f0ea; border-color: #1d1b22; border-radius: 10px; box-shadow: 0 0 0 4px #f4f0ea, 0 0 0 6px #1d1b22, 0 8px 0 6px rgba(0,0,0,.25); }
+    .gothique #sheet .frog { filter: saturate(.45) drop-shadow(0 5px 0 rgba(0,0,0,.2)); }
+    .gothique #sheet h2 { font: 600 30px "Grenze Gotisch", Georgia, serif; }
+    .gothique #sheet input { font-family: "Special Elite", monospace; color: #1d1b22; border-color: #1d1b22; border-radius: 8px; }
+    .gothique #sheet input:focus { box-shadow: 0 0 0 4px #d8c9d6; }
+    .gothique #sheet button { font-family: "Special Elite", monospace; color: #f4f0ea; background: #1d1b22; border-color: #1d1b22; border-radius: 8px; box-shadow: 0 4px 0 #5b5563; }
+    .gothique #sheet button.alt { background: #e9e5df; color: #1d1b22; }
+    html, body {
+      margin: 0; height: 100%; background: #fff5e1; overflow: hidden;
+      overscroll-behavior: none; touch-action: none;
+      -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      display: flex; align-items: center; justify-content: center;
+    }
+    canvas { display: block; opacity: 0; transition: opacity .4s; }
+    /* Fenêtre de saisie (prénoms) : même langage visuel que le jeu, encre vert foncé */
+    #sheet {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(46, 38, 80, .35); padding: 16px; z-index: 10;
+      font-family: Fredoka, system-ui, sans-serif; color: #3a4a30;
+    }
+    #sheet[hidden] { display: none; }
+    #sheet .card {
+      width: min(340px, 100%); background: #fff5e1; border: 3px solid #3a4a30; border-radius: 26px;
+      padding: 22px 20px 20px; text-align: center; box-shadow: 0 6px 0 rgba(58, 74, 48, .2);
+      animation: pop .35s cubic-bezier(.3, 1.5, .5, 1);
+    }
+    #sheet h2 { margin: 0 0 6px; font-size: 22px; font-weight: 700; line-height: 1.2; text-wrap: balance; }
+    #sheet .frog { display: block; width: 104px; height: auto; margin: -58px auto 6px; animation: hop 1.1s ease-in-out infinite; filter: drop-shadow(0 5px 0 rgba(58,74,48,.15)); }
+    #sheet .frog[hidden] { display: none; }
+    #sheet .note { margin: 0 0 16px; font-size: 14px; font-weight: 600; background: #fff; border: 2px dashed #b9a99a; border-radius: 16px; padding: 10px 12px; opacity: 1; }
+    #sheet .note[hidden] { display: none; }
+    #sheet .note.sign { border: none; background: none; text-align: right; font-size: 17px; font-weight: 700; padding: 0 6px; margin-top: -4px; }
+    #sheet .letter #sheet-text { font-size: 17px; line-height: 1.45; opacity: 1; text-align: left; }
+    #sheet input[hidden] { display: none; }
+    @keyframes hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 40% { transform: translateY(-10px) scale(.97, 1.04); } 60% { transform: translateY(0) scale(1.05, .95); } }
+    #sheet p { margin: 0 0 16px; font-size: 15px; font-weight: 500; opacity: .8; }
+    #sheet input {
+      width: 100%; box-sizing: border-box; font: 600 20px Fredoka, system-ui, sans-serif; color: #3a4a30;
+      text-align: center; padding: 12px; border: 3px solid #3a4a30; border-radius: 18px; background: #fff; outline: none;
+    }
+    #sheet input:focus { box-shadow: 0 0 0 4px #ffd1dc; }
+    #sheet .row { display: flex; gap: 10px; margin-top: 14px; }
+    #sheet button {
+      flex: 1; font: 700 16px Fredoka, system-ui, sans-serif; color: #3a4a30; padding: 12px 10px;
+      border: 3px solid #3a4a30; border-radius: 18px; background: #c8e6c9; box-shadow: 0 4px 0 #3a4a30;
+      transition: transform .08s, box-shadow .08s; -webkit-tap-highlight-color: transparent;
+    }
+    #sheet button:active { transform: translateY(4px); box-shadow: 0 0 0 #3a4a30; }
+    #sheet button.alt { background: #fff7b0; flex: 0 0 auto; }
+    #sheet button.alt[hidden] { display: none; }
+    @keyframes pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    body.ready canvas { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="game"></canvas></div>
+  <div id="sheet" hidden>
+    <form class="card" autocomplete="off">
+      <img class="frog" id="sheet-frog" src="assets/sprites/grenouille_content.png" alt="" hidden>
+      <h2 id="sheet-title"></h2>
+      <p id="sheet-text"></p>
+      <p class="note" id="sheet-note" hidden></p>
+      <input id="sheet-input" maxlength="14" enterkeyhint="done" required>
+      <div class="row">
+        <button type="button" class="alt" id="sheet-alt">Autre idée</button>
+        <button type="submit" id="sheet-ok">C'est parti</button>
+      </div>
+    </form>
+  </div>
+  <script type="module" src="js/game.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+      // Demande que la sauvegarde ne soit pas effacée par Android quand le stockage manque.
+      navigator.storage?.persist?.();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Secrets et configuration locale
+.env*
+.vercel/
+.claude/
+web/node_modules/
+
+# Contenu personnel (reste sur le site, jamais dans le dépôt public)
+web/perso.json
+web/lettres.json
+web/codes.json
+qr-*.png
+
+# Fichiers générés / locaux
+render/
+__pycache__/
+*.pyc
+save.json
+.DS_Store
