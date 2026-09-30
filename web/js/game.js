@@ -8,7 +8,7 @@ import { drawIcon } from "./icons.js";
 import { Pet, ambientMood, spriteName, ALL_SPRITES, currentHour, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 10; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 12; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -140,6 +140,17 @@ function layout() {
   L.charBottom = top + (bottom - top) * 0.8;
   L.pond = { cy: L.charBottom + 4, rx: C.W * 0.62, ry: 34 };
 }
+
+// Marge vide sous les pattes de chaque sprite (fraction de la hauteur) : les pattes se posent pile sur le nénuphar.
+const SPRITE_FOOT = {
+  grenouille_amour: 0.002, grenouille_boudeur: 0.002, grenouille_clin: 0.052, grenouille_content: 0.034,
+  grenouille_dodo: 0.116, grenouille_doree: 0.064, grenouille_jeu: 0.03, grenouille_miam: 0.052,
+  grenouille_paisible: 0.073, grenouille_reclame: 0.07, grenouille_sec: 0.13, grenouille_splash: 0.105,
+  grenouillette_amour: 0.013, grenouillette_boudeur: 0.085, grenouillette_content: 0.011, grenouillette_dodo: 0.164,
+  grenouillette_jeu: 0.061, grenouillette_miam: 0.029, grenouillette_paisible: 0.069, grenouillette_reclame: 0.024,
+  grenouillette_sec: 0.104, tetard_content: 0.048, tetard_dodo: 0.163, tetard_miam: 0.056,
+  tetard_paisible: 0.003, tetard_reclame: 0.109, tetard_sec: 0.229,
+};
 
 /** Dessine un sprite avec la teinte héritée (sauf états qui ont leur propre couleur). */
 function drawSprite(key, x, y, w, h, hue = 0, extraFilter = "") {
@@ -835,7 +846,7 @@ const DECOR = {
   nuit: { sky: "#2A2640", ground: "#36534B" }, hiver: { sky: "#D6DCE7", ground: "#F4F5F8" },
 };
 const DECOR_PLANS = ["fond", "nuages", "avant"];
-const DECOR_PAD_Y = 474, DECOR_H = 692;
+const DECOR_PAD_Y = 487, DECOR_H = 692; // les pattes se posent 5 px sous le centre du grand nénuphar (y = 482)
 const decorOn = () => GOTH && !!img.decor_jour_avant;
 function decorVariant(night) {
   if (night) return "nuit";
@@ -901,7 +912,7 @@ function drawDecorFront(night, critters) {
   ctx.strokeStyle = night ? "#8f9bc4" : "#ffffff"; ctx.lineWidth = 1.5;
   for (let i = 0; i < 3; i++) {
     const q = (t * 0.2 + i / 3) % 1;
-    const x = [84, 262, 214][i], y = dy + [492, 478, 516][i];
+    const x = [60, 252, 214][i], y = dy + [496, 470, 522][i];
     ctx.globalAlpha = (1 - q) * 0.45;
     ctx.beginPath(); ctx.ellipse(x, y, 5 + q * 16, 1.6 + q * 4.5, 0, 0, TAU); ctx.stroke();
   }
@@ -1584,7 +1595,7 @@ class PondScene {
   /** Ombeline change d'expression un instant (amour, miam, splash, clin…). */
   setGirlMood(mood, secs = 2) { if (mood) { this.girlMood = mood; this.girlMoodT = secs; } }
 
-  girlFeet() { return decorOn() ? L.charBottom + 47 : L.pond.cy + 50; } // debout sur la berge, au-dessus des messages
+  girlFeet() { return decorOn() ? L.charBottom + 34 : L.pond.cy + 50; } // debout sur la berge, au-dessus des messages
 
   girlTier() {
     const base = Math.min(3, Math.floor(this.pet.sourire / 25));
@@ -2129,14 +2140,15 @@ class PondScene {
     if (fx.prev && img[fx.prev]) {
       const pb = charBox(this.pet.stage, fx.prev);
       ctx.globalAlpha = 1 - fx.p;
-      drawSprite(fx.prev, pb.cx - pb.w / 2 + dx, L.charBottom - pb.h - lift + 4, pb.w, pb.h, this.pet.hue);
+      drawSprite(fx.prev, pb.cx - pb.w / 2 + dx, L.charBottom - pb.h * (1 - (SPRITE_FOOT[fx.prev] || 0)) - lift, pb.w, pb.h, this.pet.hue);
       ctx.globalAlpha = fx.p;
     }
-    drawSprite(key, box.cx - w / 2 + dx, L.charBottom - h - lift + 4, w, h, this.pet.hue,
+    const top = L.charBottom - h * (1 - (SPRITE_FOOT[key] || 0)) - lift; // pattes posées sur le nénuphar
+    drawSprite(key, box.cx - w / 2 + dx, top, w, h, this.pet.hue,
       night && sleepy ? "brightness(0.85)" : "");
     ctx.globalAlpha = 1;
     if (progress.hat) {
-      const hd = headTop(this.pet.stage, box.cx - w / 2 + dx, L.charBottom - h - lift + 4, w, h);
+      const hd = headTop(this.pet.stage, box.cx - w / 2 + dx, top, w, h);
       drawHat(progress.hat, hd.cx, hd.top, hd.w, this.t);
     }
     if (this.pet.nounou) {

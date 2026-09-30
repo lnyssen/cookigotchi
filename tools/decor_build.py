@@ -2,7 +2,7 @@
 (web/assets/decor/<ambiance>_<plan>.svg) et harmonise les contours avec les personnages :
 encre noire partout, trait d'environ 2 px (1,7 px pour le fond).
 Usage : python3 tools/decor_build.py   (depuis la racine du projet)"""
-import copy, xml.etree.ElementTree as ET
+import copy, re, xml.etree.ElementTree as ET
 
 NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", NS)
@@ -76,11 +76,16 @@ def build(v):
     front = []
     for e in tops[i_mare:]:
         e = copy.deepcopy(e)
+        # la mare (centrée en x = 180 dans le dessin) est recentrée sur l'écran (x = 160)
+        if e.get("id") in ("mare", "berge", "roseaux", "nenuphar"): e.set("transform", "translate(-20 0)")
+        if e.get("id") == "berge":  # le sol décalé doit encore couvrir le bord droit de l'écran
+            for c in e:
+                if c.get("d") and "332" in c.get("d"): c.set("d", re.sub(r"\b332\b", "356", c.get("d")))
         for g in e.iter(q("g")):
             gid = g.get("id")
-            if gid == "dalle-ombeline": g.set("transform", "translate(11 0)")   # sous les pieds d'Ombeline
-            if gid in PAD: g.set("transform", "translate(-8 0)")                # centré sous la grenouille
-            if gid == "fleur-lotus": g.set("transform", "translate(16 2)")
+            if gid == "dalle-ombeline": g.set("transform", "translate(31 0)")   # sous les pieds d'Ombeline (x = 56)
+            if gid in PAD: g.set("transform", "translate(12 12)")               # au centre de la mare, sous la grenouille
+            if gid == "fleur-lotus": g.set("transform", "translate(38 12)")
         front.append(e)
     out = f"web/assets/decor/{v}"
     open(out + "_fond.svg", "w").write(make(back, T_BACK))
