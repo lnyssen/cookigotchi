@@ -1012,7 +1012,7 @@ function drawPondGothic(night, critters = true) {
 // Tresses noires, robe noire, col blanc… et un sourire qui apparaît peu à peu.
 // tier : 0 impassible, 1 coin de bouche, 2 petit sourire, 3 grand sourire.
 // ---------------------------------------------------------------------------
-const GIRL = { name: "Ombeline", x: 40 };
+const GIRL = { name: "Ombeline", x: 56 };
 const GIRL_LINES = [
   ["Je ne souris jamais. Enfin… presque jamais.", "La mare est sinistre. J'adore.", "Ta grenouille a l'air lugubre. C'est un compliment."],
   ["Hm. Pas mal.", "J'ai failli sourire. Failli.", "Tu t'en occupes bien. Je dis ça, je dis rien."],
@@ -1066,89 +1066,132 @@ function girlKey(tier, { worried, cheer, night, mood }) {
   return ["sourire_a", "sourire_b", "sourire_c", "sourire_d"][tier] || "paisible";
 }
 
+// Centre des yeux sur chaque dessin, par rapport au centre et au sommet de la tête : [gauche x, y, droite x, y].
+// Plusieurs visages sont de trois quarts, « jeu » a la tête penchée : les lunettes suivent.
+const GIRL_EYES = {
+  amour: [-40, 110, 32, 110], boudeur: [-60, 128, 12, 128], clin: [-50, 120, 27, 120], content: [-45, 138, 42, 138],
+  dodo: [-42, 136, 40, 136], doree: [-41, 133, 37, 133], fatiguee: [-60, 128, 15, 128], jeu: [-22, 118, 47, 97],
+  miam: [-60, 125, 17, 125], paisible: [-60, 130, 25, 130], reclame: [-50, 123, 30, 123], sourire_a: [-52, 128, 35, 128],
+  sourire_b: [-42, 126, 37, 126], sourire_c: [-41, 131, 40, 131], sourire_d: [-42, 122, 37, 122], splash: [-45, 118, 25, 118],
+};
+
+/** Fondu + petit rebond quand un personnage change de dessin (id : "fille", "grenouille"…). */
+const swapFx = {};
+function swapState(id, key, t, dur = 0.22) {
+  const f = swapFx[id] || (swapFx[id] = { key, prev: null, t0: -9 });
+  if (f.key !== key) { f.prev = f.key; f.key = key; f.t0 = t; }
+  const p = Math.min(1, Math.max(0, (t - f.t0) / dur));
+  return { prev: p < 1 ? f.prev : null, p, pop: 1 + Math.sin(p * Math.PI) * 0.07 };
+}
+
 function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, mood = null, outfit = progress.girl || {}, scale = 1.3 } = {}) {
-  if (weatherNow() === "rain" && owns("parapluie") && scale > 1) outfit = { ...outfit, main: "parapluie" };
+  const main = scale > 1; // la vraie Ombeline de la mare (les vignettes de la boutique ne s'animent pas)
+  if (weatherNow() === "rain" && owns("parapluie") && main) outfit = { ...outfit, main: "parapluie" };
   const key = girlKey(tier, { worried, cheer, night, mood });
-  const sprite = girlImage(key, outfit.tenue);
-  const [cx, top, bottom] = GIRL_META[key];
+  const fx = main ? swapState("fille", key, t) : { prev: null, p: 1, pop: 1 };
   const s = (58 * scale / 1.3) / GIRL_HEAD; // tête ≈ 58 px à l'écran
   const hop = key === "jeu" || tier >= 3 ? Math.max(0, Math.sin(t * 3)) * 2.5 : 0;
   const breathe = 1 + Math.sin(t * 2) * 0.012;
-  ctx.save();
+  const INK = C.COLORS.trait, black = "#1d1b22";
   // ombre au sol
   ctx.fillStyle = "rgba(29,27,34,0.2)";
   ctx.beginPath(); ctx.ellipse(x, feet + 1, 24 * scale / 1.3, 4.5 * scale / 1.3, 0, 0, TAU); ctx.fill();
-  ctx.translate(x, feet - hop);
-  ctx.scale(s, s * breathe);
-  ctx.translate(-cx, -bottom);
-  const INK = C.COLORS.trait, black = "#1d1b22";
-  ctx.lineJoin = "round"; ctx.lineCap = "round";
-  // coordonnées ci-dessous : pixels du fichier (tête de 200 px, centrée sur cx, sommet à top)
-  const hx = cx, eyeY = top + 124, handR = { x: cx + 72, y: bottom - 150 }, handL = { x: cx - 72, y: bottom - 150 };
-  if (outfit.main === "parapluie") {
-    ctx.strokeStyle = black; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.moveTo(handR.x, handR.y); ctx.lineTo(handR.x - 20, top - 70); ctx.stroke();
-    ctx.beginPath(); ctx.arc(handR.x + 8, handR.y, 8, 0, Math.PI); ctx.stroke();
-    ctx.fillStyle = black;
-    const ux = hx + 4, uy = top - 60, R = 150;
-    ctx.beginPath(); ctx.moveTo(ux - R, uy); ctx.quadraticCurveTo(ux, uy - 120, ux + R, uy);
-    for (let i = 0; i < 4; i++) { const x0 = ux + R - i * (R / 2); ctx.quadraticCurveTo(x0 - R / 4, uy - 22, x0 - R / 2, uy); }
-    ctx.fill();
-    ctx.strokeStyle = "#4a4652"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(ux, uy - 70); ctx.lineTo(ux - 60, uy - 6); ctx.moveTo(ux, uy - 70); ctx.lineTo(ux + 60, uy - 6); ctx.stroke();
-  }
-  if (sprite) ctx.drawImage(sprite, 0, 0);
-  // --- garde-robe achetée à la boutique ---
-  if (outfit.yeux === "lunettes" && key !== "dodo") {
-    ctx.strokeStyle = black; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(hx - 30, eyeY, 24, 0, TAU); ctx.moveTo(hx + 54, eyeY); ctx.arc(hx + 30, eyeY, 24, 0, TAU); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(hx - 7, eyeY - 3); ctx.quadraticCurveTo(hx, eyeY - 10, hx + 7, eyeY - 3); ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.beginPath(); ctx.arc(hx - 38, eyeY - 9, 6, 0, TAU); ctx.arc(hx + 22, eyeY - 9, 6, 0, TAU); ctx.fill();
-  }
-  if (outfit.tete === "noeuds_rouges") {
-    for (const side of [-1, 1]) {
-      const bx = hx + side * 74, by = top + 46;
-      ctx.fillStyle = "#b3263f"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 24, by - 16); ctx.lineTo(bx - 24, by + 16); ctx.closePath();
-      ctx.moveTo(bx, by); ctx.lineTo(bx + 24, by - 16); ctx.lineTo(bx + 24, by + 16); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.arc(bx, by, 7, 0, TAU); ctx.fillStyle = "#8a1c30"; ctx.fill(); ctx.stroke();
+
+  const pose = (k, alpha, pop) => {
+    const sprite = girlImage(k, outfit.tenue);
+    const [cx, top, bottom] = GIRL_META[k];
+    const [elx, ely, erx, ery] = GIRL_EYES[k];
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, feet - hop);
+    ctx.scale(s * pop, s * breathe * pop);
+    ctx.translate(-cx, -bottom);
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    // coordonnées : pixels du fichier (tête de 200 px de large, centrée sur cx, sommet à top)
+    const hx = cx, handY = bottom - (bottom - top) * 0.3;
+    const handR = { x: cx + 76, y: handY }, handL = { x: cx - 76, y: handY };
+    if (outfit.main === "parapluie") {
+      ctx.strokeStyle = black; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(handR.x, handR.y); ctx.lineTo(handR.x - 20, top - 70); ctx.stroke();
+      ctx.beginPath(); ctx.arc(handR.x + 9, handR.y, 9, 0, Math.PI); ctx.stroke();
+      ctx.fillStyle = black;
+      const ux = hx + 4, uy = top - 60, R = 150;
+      ctx.beginPath(); ctx.moveTo(ux - R, uy); ctx.quadraticCurveTo(ux, uy - 120, ux + R, uy);
+      for (let i = 0; i < 4; i++) { const x0 = ux + R - i * (R / 2); ctx.quadraticCurveTo(x0 - R / 4, uy - 22, x0 - R / 2, uy); }
+      ctx.fill();
+      ctx.strokeStyle = "#4a4652"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(ux, uy - 70); ctx.lineTo(ux - 60, uy - 6); ctx.moveTo(ux, uy - 70); ctx.lineTo(ux + 60, uy - 6); ctx.stroke();
     }
-  } else if (outfit.tete === "beret") {
-    ctx.save(); ctx.translate(hx - 10, top + 8); ctx.rotate(-0.18);
-    ctx.beginPath(); ctx.ellipse(0, 0, 92, 34, 0, 0, TAU); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(8, -52); ctx.lineWidth = 8; ctx.stroke();
+    if (sprite) ctx.drawImage(sprite, 0, 0);
+    // --- garde-robe achetée à la boutique ---
+    if (outfit.yeux === "lunettes") {
+      const lx = hx + elx, ly = top + ely, rx = hx + erx, ry = top + ery;
+      const ang = Math.atan2(ry - ly, rx - lx), gap = Math.hypot(rx - lx, ry - ly);
+      const R = Math.min(27, gap / 2 - 5); // deux verres ronds qui entourent bien les yeux, sans se toucher
+      ctx.save(); ctx.translate(lx, ly); ctx.rotate(ang);
+      ctx.strokeStyle = black; ctx.lineWidth = 6.5;
+      for (const c of [0, gap]) {
+        ctx.beginPath(); ctx.arc(c, 0, R, 0, TAU);
+        ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill(); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.moveTo(R, -3); ctx.quadraticCurveTo(gap / 2, -12, gap - R, -3); ctx.stroke(); // pont
+      ctx.beginPath(); ctx.moveTo(-R, -4); ctx.lineTo(-R - 12, -9); ctx.moveTo(gap + R, -4); ctx.lineTo(gap + R + 12, -9); ctx.stroke(); // branches
+      ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 4; // reflet
+      for (const c of [0, gap]) { ctx.beginPath(); ctx.arc(c, 0, R - 8, Math.PI * 1.15, Math.PI * 1.45); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (outfit.tete === "noeuds_rouges") {
+      for (const side of [-1, 1]) {
+        const bx = hx + side * 74, by = top + 46;
+        ctx.fillStyle = "#b3263f"; ctx.strokeStyle = INK; ctx.lineWidth = 5.5;
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 24, by - 16); ctx.lineTo(bx - 24, by + 16); ctx.closePath();
+        ctx.moveTo(bx, by); ctx.lineTo(bx + 24, by - 16); ctx.lineTo(bx + 24, by + 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(bx, by, 7, 0, TAU); ctx.fillStyle = "#8a1c30"; ctx.fill(); ctx.stroke();
+      }
+    } else if (outfit.tete === "beret") {
+      ctx.save(); ctx.translate(hx - 14, top + 16); ctx.rotate(-0.2);
+      ctx.beginPath(); ctx.ellipse(0, 0, 84, 30, 0, 0, TAU); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 6.5; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-18, -9, 40, 9, -0.1, Math.PI, TAU); ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.lineWidth = 6; ctx.stroke(); // reflet
+      ctx.beginPath(); ctx.moveTo(4, -29); ctx.lineTo(11, -46); ctx.strokeStyle = INK; ctx.lineWidth = 8; ctx.stroke();
+      ctx.restore();
+    } else if (outfit.tete === "cloche") {
+      ctx.fillStyle = black; ctx.strokeStyle = INK; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.ellipse(hx, top + 34, 124, 24, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(hx - 86, top + 34); ctx.bezierCurveTo(hx - 92, top - 70, hx + 92, top - 70, hx + 86, top + 34); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#6c5a9c"; ctx.fillRect(hx - 86, top + 8, 172, 18);
+      ctx.beginPath(); ctx.arc(hx + 56, top + 16, 12, 0, TAU); ctx.fillStyle = "#b3263f"; ctx.fill();
+    }
+    if (outfit.main === "bouquet") {
+      const { x: bx, y: by } = handR;
+      ctx.strokeStyle = "#3f5a36"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(bx - 6, by + 34); ctx.lineTo(bx - 12, by - 22); ctx.moveTo(bx - 6, by + 34); ctx.lineTo(bx + 12, by - 22); ctx.moveTo(bx - 6, by + 34); ctx.lineTo(bx, by - 30); ctx.stroke();
+      for (const [dx, dy] of [[-16, -28], [16, -28], [0, -44]]) {
+        circle(bx + dx, by + dy, 16, "#8c2a45", INK, 5.5);
+        ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(bx + dx, by + dy, 9, Math.PI * 1.1, Math.PI * 1.5); ctx.stroke();
+      }
+      circle(bx - 6, by + 8, 7, "#6c5a9c", INK, 4.5); // ruban
+    } else if (outfit.main === "peluche") {
+      const bx = handL.x, by = handL.y;
+      ctx.fillStyle = "#3a3444"; ctx.strokeStyle = INK; ctx.lineWidth = 5.5;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx - 30, by - 36, bx - 56, by - 10); ctx.quadraticCurveTo(bx - 36, by + 6, bx - 20, by + 20);
+      ctx.quadraticCurveTo(bx, by + 10, bx + 20, by + 20); ctx.quadraticCurveTo(bx + 36, by + 6, bx + 56, by - 10); ctx.quadraticCurveTo(bx + 30, by - 36, bx, by); ctx.fill(); ctx.stroke();
+      circle(bx, by - 4, 21, "#3a3444", INK, 5.5);
+      ctx.fillStyle = "#f4f0ea"; ctx.beginPath(); ctx.arc(bx - 8, by - 9, 4.5, 0, TAU); ctx.arc(bx + 8, by - 9, 4.5, 0, TAU); ctx.fill();
+    }
+    // bougie la nuit (si la main est libre)
+    if (night && !outfit.main && k !== "dodo") {
+      const lx = handR.x + 16, ly = handR.y + 10;
+      const gl = ctx.createRadialGradient(lx, ly - 40, 0, lx, ly - 40, 110);
+      gl.addColorStop(0, "rgba(255,207,122,0.5)"); gl.addColorStop(1, "rgba(255,207,122,0)");
+      ctx.fillStyle = gl; ctx.fillRect(lx - 110, ly - 150, 220, 220);
+      ctx.fillStyle = "#efe9da"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.roundRect(lx - 12, ly - 30, 24, 50, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ffcf7a"; ctx.beginPath(); ctx.ellipse(lx, ly - 46 + Math.sin(t * 9) * 2, 9, 16, 0, 0, TAU); ctx.fill();
+    }
     ctx.restore();
-  } else if (outfit.tete === "cloche") {
-    ctx.fillStyle = black; ctx.strokeStyle = INK; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.ellipse(hx, top + 34, 124, 24, 0, 0, TAU); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(hx - 86, top + 34); ctx.bezierCurveTo(hx - 92, top - 70, hx + 92, top - 70, hx + 86, top + 34); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#6c5a9c"; ctx.fillRect(hx - 86, top + 8, 172, 18);
-    ctx.beginPath(); ctx.arc(hx + 56, top + 16, 12, 0, TAU); ctx.fillStyle = "#b3263f"; ctx.fill();
-  }
-  if (outfit.main === "bouquet") {
-    const { x: bx, y: by } = handR;
-    ctx.strokeStyle = "#3f5a36"; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.moveTo(bx, by + 20); ctx.lineTo(bx - 14, by - 34); ctx.moveTo(bx, by + 20); ctx.lineTo(bx + 14, by - 34); ctx.moveTo(bx, by + 20); ctx.lineTo(bx, by - 40); ctx.stroke();
-    for (const [dx, dy] of [[-18, -42], [18, -42], [0, -58]]) circle(bx + dx, by + dy, 17, "#8c2a45", INK, 5);
-  } else if (outfit.main === "peluche") {
-    const bx = handL.x, by = handL.y;
-    ctx.fillStyle = "#3a3444"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx - 30, by - 36, bx - 56, by - 10); ctx.quadraticCurveTo(bx - 36, by + 6, bx - 20, by + 20);
-    ctx.quadraticCurveTo(bx, by + 10, bx + 20, by + 20); ctx.quadraticCurveTo(bx + 36, by + 6, bx + 56, by - 10); ctx.quadraticCurveTo(bx + 30, by - 36, bx, by); ctx.fill(); ctx.stroke();
-    circle(bx, by - 4, 21, "#3a3444", INK, 5);
-    ctx.fillStyle = "#f4f0ea"; ctx.beginPath(); ctx.arc(bx - 8, by - 9, 4.5, 0, TAU); ctx.arc(bx + 8, by - 9, 4.5, 0, TAU); ctx.fill();
-  }
-  // bougie la nuit (si la main est libre)
-  if (night && !outfit.main && key !== "dodo") {
-    const lx = handR.x + 16, ly = handR.y + 10;
-    const gl = ctx.createRadialGradient(lx, ly - 40, 0, lx, ly - 40, 110);
-    gl.addColorStop(0, "rgba(255,207,122,0.5)"); gl.addColorStop(1, "rgba(255,207,122,0)");
-    ctx.fillStyle = gl; ctx.fillRect(lx - 110, ly - 150, 220, 220);
-    ctx.fillStyle = "#efe9da"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.roundRect(lx - 12, ly - 30, 24, 50, 4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#ffcf7a"; ctx.beginPath(); ctx.ellipse(lx, ly - 46 + Math.sin(t * 9) * 2, 9, 16, 0, 0, TAU); ctx.fill();
-  }
-  ctx.restore();
+  };
+  if (fx.prev) pose(fx.prev, 1 - fx.p, 1);
+  pose(key, fx.prev ? fx.p : 1, fx.pop);
 }
 
 // ---------------------------------------------------------------------------
@@ -1317,7 +1360,7 @@ class PondScene {
     }
 
     if (this.pet.isEgg) {
-      if (GOTH && Math.abs(x - GIRL.x) < 28 && y > this.girlFeet() - 125 && y < this.girlFeet()) { this.tapGirl(); return; }
+      if (GOTH && Math.abs(x - GIRL.x) < 36 && y > this.girlFeet() - 125 && y < this.girlFeet()) { this.tapGirl(); return; }
       const b = charBox("oeuf");
       if (x >= b.x - 20 && x <= b.x + b.w + 20 && y >= b.y - 20 && y <= b.y + b.h + 10) this.tapEgg();
       return;
@@ -1333,7 +1376,7 @@ class PondScene {
         return;
       }
     }
-    if (GOTH && Math.abs(x - GIRL.x) < 28 && y > this.girlFeet() - 125 && y < this.girlFeet()) { this.tapGirl(); return; }
+    if (GOTH && Math.abs(x - GIRL.x) < 36 && y > this.girlFeet() - 125 && y < this.girlFeet()) { this.tapGirl(); return; }
     const br = this.bubbleRect;
     if (this.pet.atSchool && br && x >= br.x && x <= br.x + br.w && y >= br.y && y <= br.y + br.h) { this.askDayOff(); return; }
     if (this.letter) {
@@ -1959,9 +2002,18 @@ class PondScene {
       ctx.fillStyle = g; ctx.fillRect(box.cx - a, box.cy - a, a * 2, a * 2);
     }
     lilyPad(C.W / 2, L.charBottom, Math.min(110, box.w * 0.5), night);
+    const fx = swapState("grenouille", key, this.t);
+    sx *= fx.pop; sy *= fx.pop;
     const w = box.w * sx, h = box.h * sy;
+    if (fx.prev && img[fx.prev]) {
+      const pb = charBox(this.pet.stage, fx.prev);
+      ctx.globalAlpha = 1 - fx.p;
+      drawSprite(fx.prev, pb.cx - pb.w / 2 + dx, L.charBottom - pb.h - lift + 4, pb.w, pb.h, this.pet.hue);
+      ctx.globalAlpha = fx.p;
+    }
     drawSprite(key, box.cx - w / 2 + dx, L.charBottom - h - lift + 4, w, h, this.pet.hue,
       night && sleepy ? "brightness(0.85)" : "");
+    ctx.globalAlpha = 1;
     if (progress.hat) {
       const hd = headTop(this.pet.stage, box.cx - w / 2 + dx, L.charBottom - h - lift + 4, w, h);
       drawHat(progress.hat, hd.cx, hd.top, hd.w, this.t);

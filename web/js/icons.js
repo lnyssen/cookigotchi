@@ -18,10 +18,12 @@ const ICONS = {
   ],
   // Jeu : une manette
   jeu: [
-    { d: "M7.2 7.5H16.8C19.6 7.5 21.3 9.8 21.8 12.6L22.4 16.2C22.8 18.4 21.2 20 19.4 19.2C18 18.6 17.1 16.9 16 16H8C6.9 16.9 6 18.6 4.6 19.2C2.8 20 1.2 18.4 1.6 16.2L2.2 12.6C2.7 9.8 4.4 7.5 7.2 7.5Z", fill: "#f4f0ea", stroke: true },
-    { d: "M7.3 10.4V14.4M5.3 12.4H9.3", stroke: true, width: 2.2 },
-    { d: "M16.4 11.2a1.2 1.2 0 1 0 0.01 0Z", fill: "#a3354a", stroke: true, width: 1.2 },
-    { d: "M18.4 13.6a1.2 1.2 0 1 0 0.01 0Z", fill: "#6c5a9c", stroke: true, width: 1.2 },
+    { d: "M6.6 5.6H17.4C20.7 5.6 22.3 8.1 22.7 11.1L23.2 15.6C23.5 18.6 21.5 20.4 19.5 19.5C18 18.8 17.3 16.9 16.1 16.2H7.9C6.7 16.9 6 18.8 4.5 19.5C2.5 20.4 0.5 18.6 0.8 15.6L1.3 11.1C1.7 8.1 3.3 5.6 6.6 5.6Z", fill: "#a892ea", stroke: true },
+    { d: "M5.2 8.2C5.8 7.6 6.6 7.4 7.6 7.4H11", stroke: "rgba(255,255,255,0.7)", width: 1.4 },
+    { d: "M6.5 8.3H8.7V9.9H10.3V12.1H8.7V13.7H6.5V12.1H4.9V9.9H6.5Z", fill: "#fff7e6", stroke: true, width: 1.3 },
+    { d: "M18.2 8.1a1.55 1.55 0 1 0 0.01 0Z", fill: "#ff8fab", stroke: true, width: 1.3 },
+    { d: "M15.3 10.9a1.55 1.55 0 1 0 0.01 0Z", fill: "#ffd966", stroke: true, width: 1.3 },
+    { d: "M11.2 9.1H12.8", stroke: true, width: 1.5 },
   ],
   // Mouche (le mini-jeu gobe-mouches)
   mouche: [
