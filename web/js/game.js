@@ -8,7 +8,7 @@ import { drawIcon } from "./icons.js";
 import { Pet, ambientMood, spriteName, ALL_SPRITES, currentHour, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 13; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 14; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -138,7 +138,7 @@ function layout() {
   const top = L.hudBottom, bottom = L.dock.y - 34;
   L.charScale = Math.max(1, Math.min(1.25, (bottom - top - 90) / 220));
   // Nénuphar un peu sous le centre de la zone libre : le perso occupe le milieu de l'écran.
-  L.charBottom = top + (bottom - top) * 0.8;
+  L.charBottom = top + (bottom - top) * 0.76;
   L.pond = { cy: L.charBottom + 4, rx: C.W * 0.62, ry: 34 };
 }
 
@@ -871,7 +871,9 @@ const DECOR_SKY = {
   clear: [null, 0], partly: [null, 1], cloudy: ["rgba(120,124,142,0.22)", 3], fog: ["rgba(236,236,242,0.34)", 2],
   rain: ["rgba(84,90,116,0.30)", 3], storm: ["rgba(58,60,86,0.42)", 4], snow: ["rgba(205,210,225,0.22)", 2],
 };
-const DECOR_CLOUDS = [[-158, 22], [92, 60], [-64, 98], [150, 6]]; // le premier passe devant le soleil
+const DECOR_CLOUDS = [[-158, 44], [92, 82], [-64, 120], [150, 30]];
+// Volatiles : [vitesse px/s, décalage, hauteur dans le dessin, amplitude du vol]
+const DECOR_FLYERS = [[13, 40, 196, 7], [17, 210, 176, 5], [10, 330, 236, 9]]; // le premier passe devant le soleil
 /** Texture douce : grain de papier + taches claires et sombres très légères (aspect gouache). */
 function decorTexture(seed, night) {
   let r = seed * 9301 + 49297;
@@ -897,7 +899,7 @@ const decorLayers = { key: null };
 function decorPrepare(night) {
   const v = decorVariant(night), k = smileK(), wk = weatherKind();
   const dy = L.pond.cy - 4 - DECOR_PAD_Y;
-  const key = `t3|${v}|${wk}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
+  const key = `t5|${v}|${wk}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
   if (decorLayers.key !== key) {
     const sat = `saturate(${(0.6 + 0.4 * k).toFixed(2)})`;
     const veil = DECOR_SKY[wk][0];
@@ -918,7 +920,9 @@ function decorPrepare(night) {
     decorLayers.fond = plan("fond", () => { ctx.fillStyle = DECOR[v].sky; ctx.fillRect(0, 0, C.W, view.H); },
       () => { if (veil) { ctx.fillStyle = veil; ctx.fillRect(0, 0, C.W, view.H); } });
     decorLayers.nuages = plan("nuages");
-    decorLayers.avant = plan("avant", () => { ctx.fillStyle = DECOR[v].ground; ctx.fillRect(0, dy + DECOR_H - 40, C.W, Math.max(0, view.H - dy - DECOR_H + 40)); });
+    // le sol continue sous le dessin (le premier plan est remonté de 22 px : on recouvre son bord du bas)
+    const ground = () => { ctx.fillStyle = DECOR[v].ground; ctx.fillRect(0, dy + DECOR_H - 34, C.W, Math.max(0, view.H - dy - DECOR_H + 34)); };
+    decorLayers.avant = plan("avant", ground, ground);
   }
   return decorLayers;
 }
@@ -928,12 +932,24 @@ function drawDecorBack(t, night) {
   const color = DECOR[d.v].sky;
   if (color !== bodyColor) { document.body.style.background = color; bodyColor = color; }
   ctx.drawImage(d.fond, 0, 0, C.W, view.H);
+  // Les nuages traversent le ciel et reviennent par l'autre bord (le calque est dessiné deux fois, bout à bout).
+  const drift = (speed, ox, oy) => {
+    const x = (((t * speed + ox) % C.W) + C.W) % C.W;
+    ctx.drawImage(d.nuages, x, oy, C.W, view.H);
+    ctx.drawImage(d.nuages, x - C.W, oy, C.W, view.H);
+  };
   const extra = DECOR_SKY[d.wk][1];
-  for (let i = 0; i < extra; i++) { // ciel couvert : les mêmes nuages, décalés, qui dérivent chacun à leur rythme
+  for (let i = 0; i < extra; i++) { // ciel couvert : les mêmes nuages, décalés, chacun à sa vitesse
     const [ox, oy] = DECOR_CLOUDS[i];
-    ctx.drawImage(d.nuages, ox + Math.sin(t * 0.05 + i * 1.7) * 12, oy + Math.sin(t * 0.09 + i) * 2, C.W, view.H);
+    drift(2.2 + i * 0.9, ox, oy + Math.sin(t * 0.09 + i) * 2);
   }
-  ctx.drawImage(d.nuages, Math.sin(t * 0.07) * 9, Math.sin(t * 0.11) * 1.5, C.W, view.H); // les nuages dérivent doucement
+  drift(3.4, 0, 22 + Math.sin(t * 0.11) * 1.5); // un peu plus bas : pas derrière les jauges
+  // Oiseaux le jour, chauves-souris au crépuscule et la nuit : ils volent en battant des ailes.
+  const flyer = d.v === "nuit" || d.v === "crepuscule" ? bat : crow;
+  for (const [speed, phase, y, wob] of DECOR_FLYERS) {
+    const x = ((t * speed + phase) % (C.W + 80)) - 40;
+    flyer(x, d.dy + y + Math.sin(t * 0.9 + phase) * wob, t + phase);
+  }
   if (d.wk === "storm" && (t % 9) < 0.12) { ctx.fillStyle = "rgba(255,255,240,0.28)"; ctx.fillRect(0, 0, C.W, view.H); } // éclair
 }
 function drawDecorFront(night, critters) {
@@ -1058,23 +1074,25 @@ function gravestone(x, y, night) {
 }
 
 function crow(x, y, t) {
-  const f = Math.sin(t * 9) * 5;
-  ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.lineJoin = "round";
-  ctx.beginPath(); ctx.moveTo(x - 10, y - f); ctx.quadraticCurveTo(x - 4, y - 4, x, y); ctx.quadraticCurveTo(x + 4, y - 4, x + 10, y - f); ctx.stroke();
+  const f = Math.sin(t * 8) * 4.5;
+  ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(x - 9, y - f); ctx.quadraticCurveTo(x - 4, y - 5, x, y); ctx.quadraticCurveTo(x + 4, y - 5, x + 9, y - f); ctx.stroke();
 }
 
 function bat(x, y, t) {
-  const f = Math.sin(t * 14);
-  ctx.fillStyle = "#0b0a0e";
+  const f = Math.sin(t * 11);
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.quadraticCurveTo(x - 6, y - 6 - f * 4, x - 13, y - 2 - f * 5);
-  ctx.quadraticCurveTo(x - 8, y + 1, x - 5, y + 4);
-  ctx.quadraticCurveTo(x, y + 2, x + 5, y + 4);
-  ctx.quadraticCurveTo(x + 8, y + 1, x + 13, y - 2 - f * 5);
-  ctx.quadraticCurveTo(x + 6, y - 6 - f * 4, x, y);
-  ctx.fill();
-  ctx.fillStyle = "#e9e5df"; ctx.beginPath(); ctx.arc(x - 1.5, y, 0.8, 0, TAU); ctx.arc(x + 1.5, y, 0.8, 0, TAU); ctx.fill();
+  ctx.moveTo(x, y - 2);
+  ctx.quadraticCurveTo(x - 6, y - 7 - f * 4, x - 14, y - 3 - f * 6);
+  ctx.quadraticCurveTo(x - 11, y + 1 - f * 2, x - 8, y + 1); ctx.quadraticCurveTo(x - 6, y - 1, x - 4, y + 3);
+  ctx.quadraticCurveTo(x, y + 1, x + 4, y + 3);
+  ctx.quadraticCurveTo(x + 6, y - 1, x + 8, y + 1); ctx.quadraticCurveTo(x + 11, y + 1 - f * 2, x + 14, y - 3 - f * 6);
+  ctx.quadraticCurveTo(x + 6, y - 7 - f * 4, x, y - 2);
+  ctx.closePath();
+  ctx.fillStyle = "#6f5fb0"; ctx.fill();
+  ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 1.8; ctx.stroke();
+  ctx.fillStyle = "#1d1b22"; ctx.beginPath(); ctx.arc(x - 1.6, y - 0.5, 0.8, 0, TAU); ctx.arc(x + 1.6, y - 0.5, 0.8, 0, TAU); ctx.fill();
 }
 
 function drawPondGothic(night, critters = true) {

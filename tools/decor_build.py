@@ -72,12 +72,20 @@ def build(v):
         thin(r, inks, t)
         return ET.tostring(r, encoding="unicode")
 
+    def without(e, ids):
+        e = copy.deepcopy(e)
+        for parent in list(e.iter()):
+            for c in list(parent):
+                if c.get("id") in ids: parent.remove(c)
+        return e
     back = [copy.deepcopy(e) for e in tops[:i_mare] if e.get("id") not in NUAGES]
+    back += [copy.deepcopy(g) for g in root.iter(q("g")) if g.get("id") == "flocons"]
     front = []
     for e in tops[i_mare:]:
         e = copy.deepcopy(e)
         # la mare (centrée en x = 180 dans le dessin) est recentrée sur l'écran (x = 160)
         if e.get("id") in ("mare", "berge", "roseaux", "nenuphar"): e.set("transform", "translate(-20 0)")
+        if e.get("id") == "premier-plan": e.set("transform", "translate(0 -22)")  # remonté : sinon caché par la barre de boutons
         if e.get("id") == "berge":  # le sol décalé doit encore couvrir le bord droit de l'écran
             for c in e:
                 if c.get("d") and "332" in c.get("d"): c.set("d", re.sub(r"\b332\b", "356", c.get("d")))
@@ -90,7 +98,7 @@ def build(v):
     out = f"web/assets/decor/{v}"
     open(out + "_fond.svg", "w").write(make(back, T_BACK))
     open(out + "_avant.svg", "w").write(make(front, T_FRONT))
-    open(out + "_nuages.svg", "w").write(make([copy.deepcopy(e) for e in tops if e.get("id") in NUAGES], T_BACK))
+    open(out + "_nuages.svg", "w").write(make([without(e, {"volants", "flocons"}) for e in tops if e.get("id") in NUAGES], T_BACK))
 
 
 for v in FAR_INK: build(v)
