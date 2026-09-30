@@ -8,7 +8,7 @@ import { drawIcon } from "./icons.js";
 import { Pet, ambientMood, spriteName, ALL_SPRITES, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 7; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 8; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -1023,42 +1023,35 @@ const GIRL_LINES = [
 // Sprites d'Ombeline (assets/ombeline, dessinés dans Figma) : tête = 200 px de large dans le fichier.
 // cx = centre de la tête, top = haut des cheveux, feet = bas des bottines (en pixels du fichier).
 const GIRL_META = {
-  amour: [129.8, 0.5, 362.1], boudeur: [100.4, 0.4, 325.1], clin: [100.4, 0.4, 357.1], content: [100.4, 0.4, 322],
-  dodo: [100.4, 0.4, 344.4], doree: [148.9, 1.5, 361.5], fatiguee: [100.4, 0.4, 341.6], jeu: [104.2, 0.5, 323.3],
-  miam: [100.4, 0.4, 330.8], paisible: [100.4, 0.4, 368], reclame: [100.4, 0.4, 324.9], sourire_a: [100.4, 0.4, 355.3],
-  sourire_b: [100.5, 0.5, 336.7], sourire_c: [100.5, 0.5, 342.8], sourire_d: [126, 0.4, 361.5], splash: [114.4, 0.4, 304.7],
+  amour: [132.9, 0.2, 321], boudeur: [103.3, 0, 354], clin: [101.4, 0, 300], content: [101.3, 0.3, 318],
+  dodo: [101.1, 0.3, 318], doree: [129, 17, 399], fatiguee: [107.3, 0.2, 309], jeu: [101.8, 0.3, 322],
+  miam: [102.9, 0.3, 330], paisible: [102.7, 0, 328], reclame: [111.9, 0.3, 360], sourire_a: [100.8, 0.3, 318],
+  sourire_b: [101.5, 0.3, 297], sourire_c: [102.9, 0, 350], sourire_d: [137.7, 6.1, 326], splash: [118.3, 0.3, 318],
 };
 const GIRL_SPRITES = Object.keys(GIRL_META);
 const GIRL_HEAD = 200;
 
-/** Robe recolorée (violette ou à rayures) : on repeint le gris foncé neutre de la robe, une fois, en cache. */
+/** Robe recolorée (violette ou à rayures) : on teinte le masque de la robe (robe_*.png), une fois, en cache. */
 const girlDressCache = {};
 function girlImage(key, tenue) {
-  const base = img[`ombeline_${key}`];
-  if (!base || !tenue || key === "doree") return base;
+  const base = img[`ombeline_${key}`], mask = img[`ombeline_robe_${key}`];
+  if (!base || !tenue || !mask) return base;
   const id = `${key}|${tenue}`;
   if (girlDressCache[id]) return girlDressCache[id];
-  const c = document.createElement("canvas");
-  c.width = base.width; c.height = base.height;
-  const g = c.getContext("2d");
+  const c = document.createElement("canvas"), m = document.createElement("canvas");
+  c.width = m.width = base.width; c.height = m.height = base.height;
+  const g = c.getContext("2d"), gm = m.getContext("2d");
+  gm.drawImage(mask, 0, 0);
+  gm.globalCompositeOperation = "source-in";
+  gm.fillStyle = tenue === "robe_violette" ? "#5a4486" : "#2b2a30";
+  gm.fillRect(0, 0, m.width, m.height);
+  if (tenue === "robe_rayee") {
+    gm.globalCompositeOperation = "source-atop";
+    gm.fillStyle = "#8a8496";
+    for (let y = 0; y < m.height; y += 22) gm.fillRect(0, y, m.width, 9);
+  }
   g.drawImage(base, 0, 0);
-  try {
-    const data = g.getImageData(0, 0, c.width, c.height), d = data.data;
-    const [, top, feet] = GIRL_META[key];
-    const y0 = top + GIRL_HEAD * 0.95, y1 = feet - (feet - top) * 0.2; // sous la tête, au-dessus des jambes
-    for (let y = Math.max(0, Math.floor(y0)); y < Math.min(c.height, y1); y++) {
-      const stripe = Math.floor(y / 14) % 2 === 0;
-      for (let x = 0; x < c.width; x++) {
-        const i = (y * c.width + x) * 4, r = d[i], gg = d[i + 1], b = d[i + 2];
-        const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
-        if (d[i + 3] < 200 || mx - mn > 7 || mx < 30 || mx > 80) continue; // seulement le tissu gris foncé
-        const k = mx / 42;
-        if (tenue === "robe_violette") { d[i] = 75 * k; d[i + 1] = 58 * k; d[i + 2] = 107 * k; }
-        else if (stripe) { d[i] = 107 * k; d[i + 1] = 101 * k; d[i + 2] = 117 * k; }
-      }
-    }
-    g.putImageData(data, 0, 0);
-  } catch {}
+  g.drawImage(m, 0, 0);
   return (girlDressCache[id] = c);
 }
 
@@ -3360,6 +3353,7 @@ async function start() {
   await Promise.all([
     ...ALL_SPRITES.map((n) => loadImage(n, `assets/sprites/${n}.png?v=${ASSET_V}`)),
     ...GIRL_SPRITES.map((n) => loadImage(`ombeline_${n}`, `assets/ombeline/${n}.png?v=${ASSET_V}`)),
+    ...GIRL_SPRITES.filter((n) => n !== "amour" && n !== "doree").map((n) => loadImage(`ombeline_robe_${n}`, `assets/ombeline/robe_${n}.png?v=${ASSET_V}`)),
     document.fonts?.load(`600 16px ${FONTS.body}`).catch(() => {}),
     document.fonts?.load(`600 20px ${FONTS.title}`).catch(() => {}),
   ]);
