@@ -64,6 +64,7 @@ export const ACHIEVEMENTS = [
   { id: "doree", ev: "doree", goal: 1, name: "Grenouille dorée", reward: 150 },
   { id: "achats5", ev: "achat", goal: 5, name: "Collectionneuse", reward: 60 },
   { id: "jours7", ev: "jour", goal: 7, name: "Une semaine à la mare", reward: 70 },
+  { id: "surprises10", ev: "surprise", goal: 10, name: "Chasseuse de surprises", reward: 40 },
   { id: "jours30", ev: "jour", goal: 30, name: "Un mois à la mare", reward: 200 },
   { id: "quetes20", ev: "quete", goal: 20, name: "Aventurière", reward: 80 },
   { id: "lettres7", ev: "lettre", goal: 7, name: "Les mots de papa", reward: 70 },
@@ -142,6 +143,9 @@ export function record(ev, value = 1) {
   }
   save();
 }
+
+/** Pièces trouvées (surprises de la mare). */
+export function gift(n) { progress.coins += n; save(); }
 
 export function achievementValue(a) {
   return Math.min(a.goal, a.max ? progress.best[a.ev] ?? 0 : progress.counts[a.ev] ?? 0);

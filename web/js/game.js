@@ -3,12 +3,12 @@
 import { THEME, FONTS, t, SMILE_MOMENTS, setTheme, NEXT_THEME, THEME_LABEL } from "./theme.js";
 import * as C from "./config.js";
 import * as audio from "./audio.js";
-import { progress, record, startDay, onProgress, SHOP, ACHIEVEMENTS, QUESTS_BONUS, questDef, achievementValue, buy, toggleHat, toggleGirl, owns, redeemCode } from "./progress.js";
+import { progress, record, startDay, onProgress, SHOP, ACHIEVEMENTS, QUESTS_BONUS, questDef, achievementValue, buy, toggleHat, toggleGirl, owns, redeemCode, gift } from "./progress.js";
 import { drawIcon } from "./icons.js";
 import { Pet, ambientMood, spriteName, ALL_SPRITES, currentHour, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 12; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 13; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -119,10 +119,11 @@ const L = {};
 const BUTTONS = ["calin", "miam", "jeu", "dodo", "baignade", "nounou"];
 function layout() {
   const H = view.H;
-  L.gear = { x: C.W - 26, y: C.HUD_TOP + 13, r: 15 };
-  L.family = { x: C.W - 64, y: C.HUD_TOP + 13, r: 15 };
-  L.age = { x: 12, y: C.HUD_TOP + 2, w: 150, h: 24 };
-  L.coins = { x: 168, y: C.HUD_TOP + 2, w: 64, h: 24 };
+  // rangée du haut : étiquette, pièces, grimoire et réglages ont tous 28 px de haut
+  L.gear = { x: C.W - 26, y: C.HUD_TOP + 14, r: 14 };
+  L.family = { x: C.W - 62, y: C.HUD_TOP + 14, r: 14 };
+  L.age = { x: 12, y: C.HUD_TOP, w: 148, h: 28 };
+  L.coins = { x: 168, y: C.HUD_TOP, w: 66, h: 28 };
   L.gauges = C.STAT_NAMES.map((name, i) => ({
     name, x: 12 + (i % 2) * 154, y: C.HUD_TOP + 42 + Math.floor(i / 2) * 28,
   }));
@@ -144,7 +145,7 @@ function layout() {
 // Marge vide sous les pattes de chaque sprite (fraction de la hauteur) : les pattes se posent pile sur le nénuphar.
 const SPRITE_FOOT = {
   grenouille_amour: 0.002, grenouille_boudeur: 0.002, grenouille_clin: 0.052, grenouille_content: 0.034,
-  grenouille_dodo: 0.116, grenouille_doree: 0.064, grenouille_jeu: 0.03, grenouille_miam: 0.052,
+  grenouille_dodo: 0.116, grenouille_doree: 0.059, grenouille_jeu: 0.03, grenouille_miam: 0.052,
   grenouille_paisible: 0.073, grenouille_reclame: 0.07, grenouille_sec: 0.13, grenouille_splash: 0.105,
   grenouillette_amour: 0.013, grenouillette_boudeur: 0.085, grenouillette_content: 0.011, grenouillette_dodo: 0.164,
   grenouillette_jeu: 0.061, grenouillette_miam: 0.029, grenouillette_paisible: 0.069, grenouillette_reclame: 0.024,
@@ -387,7 +388,7 @@ function drawDecor(id, x, y, t, night, s = 1) {
     ctx.beginPath(); ctx.ellipse(0, -10, 8, 10, 0, 0, TAU); ctx.fill();
     ctx.beginPath(); ctx.arc(0, -22, 7, 0, TAU); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-6, -25); ctx.lineTo(-5, -33); ctx.lineTo(-1, -28); ctx.moveTo(6, -25); ctx.lineTo(5, -33); ctx.lineTo(1, -28); ctx.fill();
-    ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 3;
+    ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.moveTo(7, -4); ctx.quadraticCurveTo(18, -6 + Math.sin(t * 2) * 4, 14, -18 + Math.sin(t * 2) * 3); ctx.stroke();
     ctx.fillStyle = "#e6c25a";
     const blink = (t % 5) < 0.15;
@@ -411,7 +412,7 @@ function charBox(stage, key) {
 // ---------------------------------------------------------------------------
 // Outils de dessin
 // ---------------------------------------------------------------------------
-function rr(x, y, w, h, fill, stroke = C.COLORS.trait, lw = 2.5, r = h / 2) {
+function rr(x, y, w, h, fill, stroke = C.COLORS.trait, lw = 2.2, r = h / 2) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
   if (fill) { ctx.fillStyle = fill; ctx.fill(); }
@@ -425,7 +426,7 @@ function shade(hex, k = 0.82) {
   return `#${c(n >> 16)}${c((n >> 8) & 255)}${c(n & 255)}`;
 }
 
-function circle(x, y, r, fill, stroke = C.COLORS.trait, lw = 2.5) {
+function circle(x, y, r, fill, stroke = C.COLORS.trait, lw = 2.2) {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, TAU);
   if (fill) { ctx.fillStyle = fill; ctx.fill(); }
@@ -471,7 +472,7 @@ function lilyPad(cx, cy, rx, night) {
   ctx.closePath();
   ctx.fillStyle = night ? C.COLORS.nenuphar_nuit : C.COLORS.nenuphar;
   ctx.fill();
-  ctx.lineWidth = rx > 40 ? 3.5 : 2.5; ctx.lineJoin = "round"; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
+  ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
   ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(cx - rx * 0.55, cy + ry * 0.1); ctx.lineTo(cx - rx * 0.1, cy - ry * 0.1);
   ctx.moveTo(cx + rx * 0.55, cy + ry * 0.15); ctx.lineTo(cx + rx * 0.1, cy - ry * 0.05); ctx.stroke();
@@ -867,11 +868,32 @@ const DECOR_SKY = {
   rain: ["rgba(84,90,116,0.30)", 3], storm: ["rgba(58,60,86,0.42)", 4], snow: ["rgba(205,210,225,0.22)", 2],
 };
 const DECOR_CLOUDS = [[-158, 22], [92, 60], [-64, 98], [150, 6]]; // le premier passe devant le soleil
+/** Texture douce : grain de papier + taches claires et sombres très légères (aspect gouache). */
+function decorTexture(seed, night) {
+  let r = seed * 9301 + 49297;
+  const rnd = () => ((r = (r * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * C.W, y = rnd() * view.H, rad = 18 + rnd() * 46, light = rnd() < 0.55;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+    const c = light ? (night ? "190,180,255" : "255,255,255") : "40,30,70";
+    g.addColorStop(0, `rgba(${c},${light ? 0.07 : 0.045})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  ctx.globalAlpha = 0.5;
+  for (let i = 0; i < 260; i++) { // petites mouchetures
+    const x = rnd() * C.W, y = rnd() * view.H;
+    ctx.fillStyle = rnd() < 0.5 ? "rgba(255,255,255,0.22)" : "rgba(29,27,34,0.13)";
+    ctx.beginPath(); ctx.arc(x, y, 0.35 + rnd() * 0.6, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = ctx.createPattern(grain, "repeat"); // grain fin, deux passes
+  ctx.fillRect(0, 0, C.W, view.H);
+}
 const decorLayers = { key: null };
 function decorPrepare(night) {
   const v = decorVariant(night), k = smileK(), wk = weatherKind();
   const dy = L.pond.cy - 4 - DECOR_PAD_Y;
-  const key = `${v}|${wk}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
+  const key = `t3|${v}|${wk}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
   if (decorLayers.key !== key) {
     const sat = `saturate(${(0.6 + 0.4 * k).toFixed(2)})`;
     const veil = DECOR_SKY[wk][0];
@@ -882,6 +904,11 @@ function decorPrepare(night) {
       if (im) ctx.drawImage(im, 0, dy, C.W, DECOR_H);
       ctx.filter = "none";
       after?.();
+      if (name !== "nuages") { // texture : uniquement là où le calque est peint
+        ctx.globalCompositeOperation = "source-atop";
+        decorTexture(name === "fond" ? 11 : 29, v === "nuit");
+        ctx.globalCompositeOperation = "source-over";
+      }
     });
     decorLayers.key = key; decorLayers.v = v; decorLayers.dy = dy; decorLayers.wk = wk;
     decorLayers.fond = plan("fond", () => { ctx.fillStyle = DECOR[v].sky; ctx.fillRect(0, 0, C.W, view.H); },
@@ -1017,7 +1044,7 @@ function rose(x, y, night, k) {
 
 function gravestone(x, y, night) {
   ctx.fillStyle = night ? "#3a3642" : "#a7a3ab";
-  ctx.strokeStyle = C.COLORS.trait; ctx.lineWidth = 2.5;
+  ctx.strokeStyle = C.COLORS.trait; ctx.lineWidth = 2.2;
   ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x - 10, y - 16); ctx.arc(x, y - 16, 10, Math.PI, TAU); ctx.lineTo(x + 10, y); ctx.closePath();
   ctx.fill(); ctx.stroke();
   ctx.lineWidth = 1.6; // petite croix gravée
@@ -1122,10 +1149,10 @@ const GIRL_LINES = [
 // Sprites d'Ombeline (assets/ombeline, dessinés dans Figma) : tête = 200 px de large dans le fichier.
 // cx = centre de la tête, top = haut des cheveux, feet = bas des bottines (en pixels du fichier).
 const GIRL_META = {
-  amour: [132.9, 0.2, 321], boudeur: [103.3, 0, 354], clin: [101.4, 0, 300], content: [101.3, 0.3, 318],
-  dodo: [101.1, 0.3, 318], doree: [129, 17, 399], fatiguee: [107.3, 0.2, 309], jeu: [101.8, 0.3, 322],
-  miam: [102.9, 0.3, 330], paisible: [102.7, 0, 328], reclame: [111.9, 0.3, 360], sourire_a: [100.8, 0.3, 318],
-  sourire_b: [101.5, 0.3, 297], sourire_c: [102.9, 0, 350], sourire_d: [137.7, 6.1, 326], splash: [118.3, 0.3, 318],
+  amour: [126.7, 0.2, 316], boudeur: [103.2, 0.0, 348], clin: [101.3, 0.2, 292], content: [101.3, 0.0, 314],
+  dodo: [101.3, 0.3, 309], doree: [123.2, 14, 383], fatiguee: [107.0, 0.0, 304], jeu: [101.7, 0.2, 306],
+  miam: [102.8, 0.0, 324], paisible: [102.6, 0.0, 321], reclame: [111.1, 0.3, 352], sourire_a: [101.0, 0.2, 313],
+  sourire_b: [101.4, 0.2, 288], sourire_c: [102.5, 0.3, 344], sourire_d: [132.6, 3.3, 313], splash: [116.2, 0.2, 300],
 };
 const GIRL_SPRITES = Object.keys(GIRL_META);
 const GIRL_HEAD = 200;
@@ -1168,10 +1195,10 @@ function girlKey(tier, { worried, cheer, night, mood }) {
 // Centre des yeux sur chaque dessin, par rapport au centre et au sommet de la tête : [gauche x, y, droite x, y].
 // Plusieurs visages sont de trois quarts, « jeu » a la tête penchée : les lunettes suivent.
 const GIRL_EYES = {
-  amour: [-40, 110, 32, 110], boudeur: [-60, 128, 12, 128], clin: [-50, 120, 27, 120], content: [-45, 138, 42, 138],
-  dodo: [-42, 136, 40, 136], doree: [-41, 133, 37, 133], fatiguee: [-60, 128, 15, 128], jeu: [-22, 118, 47, 97],
-  miam: [-60, 125, 17, 125], paisible: [-60, 130, 25, 130], reclame: [-50, 123, 30, 123], sourire_a: [-52, 128, 35, 128],
-  sourire_b: [-42, 126, 37, 126], sourire_c: [-41, 131, 40, 131], sourire_d: [-42, 122, 37, 122], splash: [-45, 118, 25, 118],
+  amour: [-38, 110, 31, 110], boudeur: [-58, 127, 12, 127], clin: [-48, 119, 26, 119], content: [-43, 137, 40, 137],
+  dodo: [-40, 134, 38, 134], doree: [-39, 131, 35, 131], fatiguee: [-57, 127, 14, 127], jeu: [-20, 113, 44, 94],
+  miam: [-57, 124, 16, 124], paisible: [-57, 129, 24, 129], reclame: [-48, 122, 29, 122], sourire_a: [-50, 127, 33, 127],
+  sourire_b: [-40, 125, 35, 125], sourire_c: [-39, 130, 38, 130], sourire_d: [-40, 121, 35, 121], splash: [-42, 115, 23, 115],
 };
 
 /** Fondu + petit rebond quand un personnage change de dessin (id : "fille", "grenouille"…). */
@@ -1210,7 +1237,7 @@ function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, moo
     const hx = cx, handY = bottom - (bottom - top) * 0.3;
     const handR = { x: cx + 76, y: handY }, handL = { x: cx - 76, y: handY };
     if (outfit.main === "parapluie") {
-      ctx.strokeStyle = black; ctx.lineWidth = 7;
+      ctx.strokeStyle = black; ctx.lineWidth = 7.2;
       ctx.beginPath(); ctx.moveTo(handR.x, handR.y); ctx.lineTo(handR.x - 20, top - 70); ctx.stroke();
       ctx.beginPath(); ctx.arc(handR.x + 9, handR.y, 9, 0, Math.PI); ctx.stroke();
       ctx.fillStyle = black;
@@ -1228,7 +1255,7 @@ function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, moo
       const ang = Math.atan2(ry - ly, rx - lx), gap = Math.hypot(rx - lx, ry - ly);
       const R = Math.min(27, gap / 2 - 5); // deux verres ronds qui entourent bien les yeux, sans se toucher
       ctx.save(); ctx.translate(lx, ly); ctx.rotate(ang);
-      ctx.strokeStyle = black; ctx.lineWidth = 6.5;
+      ctx.strokeStyle = black; ctx.lineWidth = 7.2;
       for (const c of [0, gap]) {
         ctx.beginPath(); ctx.arc(c, 0, R, 0, TAU);
         ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill(); ctx.stroke();
@@ -1242,19 +1269,19 @@ function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, moo
     if (outfit.tete === "noeuds_rouges") {
       for (const side of [-1, 1]) {
         const bx = hx + side * 74, by = top + 46;
-        ctx.fillStyle = "#b3263f"; ctx.strokeStyle = INK; ctx.lineWidth = 5.5;
+        ctx.fillStyle = "#b3263f"; ctx.strokeStyle = INK; ctx.lineWidth = 7.2;
         ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 24, by - 16); ctx.lineTo(bx - 24, by + 16); ctx.closePath();
         ctx.moveTo(bx, by); ctx.lineTo(bx + 24, by - 16); ctx.lineTo(bx + 24, by + 16); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.arc(bx, by, 7, 0, TAU); ctx.fillStyle = "#8a1c30"; ctx.fill(); ctx.stroke();
       }
     } else if (outfit.tete === "beret") {
       ctx.save(); ctx.translate(hx - 14, top + 16); ctx.rotate(-0.2);
-      ctx.beginPath(); ctx.ellipse(0, 0, 84, 30, 0, 0, TAU); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 6.5; ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(-18, -9, 40, 9, -0.1, Math.PI, TAU); ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.lineWidth = 6; ctx.stroke(); // reflet
-      ctx.beginPath(); ctx.moveTo(4, -29); ctx.lineTo(11, -46); ctx.strokeStyle = INK; ctx.lineWidth = 8; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, 84, 30, 0, 0, TAU); ctx.fillStyle = "#7a2e3e"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 7.2; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-18, -9, 40, 9, -0.1, Math.PI, TAU); ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.lineWidth = 7.2; ctx.stroke(); // reflet
+      ctx.beginPath(); ctx.moveTo(4, -29); ctx.lineTo(11, -46); ctx.strokeStyle = INK; ctx.lineWidth = 7.2; ctx.stroke();
       ctx.restore();
     } else if (outfit.tete === "cloche") {
-      ctx.fillStyle = black; ctx.strokeStyle = INK; ctx.lineWidth = 6;
+      ctx.fillStyle = black; ctx.strokeStyle = INK; ctx.lineWidth = 7.2;
       ctx.beginPath(); ctx.ellipse(hx, top + 34, 124, 24, 0, 0, TAU); ctx.fill();
       ctx.beginPath(); ctx.moveTo(hx - 86, top + 34); ctx.bezierCurveTo(hx - 92, top - 70, hx + 92, top - 70, hx + 86, top + 34); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#6c5a9c"; ctx.fillRect(hx - 86, top + 8, 172, 18);
@@ -1262,19 +1289,19 @@ function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, moo
     }
     if (outfit.main === "bouquet") {
       const { x: bx, y: by } = handR;
-      ctx.strokeStyle = "#3f5a36"; ctx.lineWidth = 6;
+      ctx.strokeStyle = "#3f5a36"; ctx.lineWidth = 7.2;
       ctx.beginPath(); ctx.moveTo(bx - 6, by + 34); ctx.lineTo(bx - 12, by - 22); ctx.moveTo(bx - 6, by + 34); ctx.lineTo(bx + 12, by - 22); ctx.moveTo(bx - 6, by + 34); ctx.lineTo(bx, by - 30); ctx.stroke();
       for (const [dx, dy] of [[-16, -28], [16, -28], [0, -44]]) {
-        circle(bx + dx, by + dy, 16, "#8c2a45", INK, 5.5);
+        circle(bx + dx, by + dy, 16, "#8c2a45", INK, 7.2);
         ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(bx + dx, by + dy, 9, Math.PI * 1.1, Math.PI * 1.5); ctx.stroke();
       }
-      circle(bx - 6, by + 8, 7, "#6c5a9c", INK, 4.5); // ruban
+      circle(bx - 6, by + 8, 7, "#6c5a9c", INK, 6); // ruban
     } else if (outfit.main === "peluche") {
       const bx = handL.x, by = handL.y;
-      ctx.fillStyle = "#3a3444"; ctx.strokeStyle = INK; ctx.lineWidth = 5.5;
+      ctx.fillStyle = "#3a3444"; ctx.strokeStyle = INK; ctx.lineWidth = 7.2;
       ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx - 30, by - 36, bx - 56, by - 10); ctx.quadraticCurveTo(bx - 36, by + 6, bx - 20, by + 20);
       ctx.quadraticCurveTo(bx, by + 10, bx + 20, by + 20); ctx.quadraticCurveTo(bx + 36, by + 6, bx + 56, by - 10); ctx.quadraticCurveTo(bx + 30, by - 36, bx, by); ctx.fill(); ctx.stroke();
-      circle(bx, by - 4, 21, "#3a3444", INK, 5.5);
+      circle(bx, by - 4, 21, "#3a3444", INK, 7.2);
       ctx.fillStyle = "#f4f0ea"; ctx.beginPath(); ctx.arc(bx - 8, by - 9, 4.5, 0, TAU); ctx.arc(bx + 8, by - 9, 4.5, 0, TAU); ctx.fill();
     }
     // bougie la nuit (si la main est libre)
@@ -1283,7 +1310,7 @@ function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, moo
       const gl = ctx.createRadialGradient(lx, ly - 40, 0, lx, ly - 40, 110);
       gl.addColorStop(0, "rgba(255,207,122,0.5)"); gl.addColorStop(1, "rgba(255,207,122,0)");
       ctx.fillStyle = gl; ctx.fillRect(lx - 110, ly - 150, 220, 220);
-      ctx.fillStyle = "#efe9da"; ctx.strokeStyle = INK; ctx.lineWidth = 5;
+      ctx.fillStyle = "#efe9da"; ctx.strokeStyle = INK; ctx.lineWidth = 7.2;
       ctx.beginPath(); ctx.roundRect(lx - 12, ly - 30, 24, 50, 4); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#ffcf7a"; ctx.beginPath(); ctx.ellipse(lx, ly - 46 + Math.sin(t * 9) * 2, 9, 16, 0, 0, TAU); ctx.fill();
     }
@@ -1291,6 +1318,89 @@ function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, moo
   };
   if (fx.prev) pose(fx.prev, 1 - fx.p, 1);
   pose(key, fx.prev ? fx.p : 1, fx.pop);
+}
+
+// ---------------------------------------------------------------------------
+// Surprises de la mare : de temps en temps, quelque chose passe. On le touche → quelques pièces.
+// ---------------------------------------------------------------------------
+const SURPRISES = {
+  etoile: { life: 4.5, r: 40, coins: 8, text: "Une étoile filante ! Fais un vœu…" },
+  fantome: { life: 11, r: 30, coins: 4, text: "« Bouh ! … Je plaisante. » Guimauve le fantôme te salue." },
+  poisson: { life: 9, r: 34, coins: 4, text: "Plouf ! Le poisson t'a fait un clin d'œil." },
+  cadeau: { life: 13, r: 32, coins: 12, text: "Un cadeau tombé du ciel !" },
+  papillon: { life: 12, r: 30, coins: 5, text: "Le papillon doré s'est posé sur ton doigt !" },
+};
+
+/** Position actuelle de la surprise (ou null quand elle est cachée, ex. le poisson sous l'eau). */
+function surprisePos(sp) {
+  const t = sp.t, base = L.charBottom;
+  if (sp.kind === "etoile") { const p = t / 4.5; return [C.W + 20 - p * (C.W + 60), L.hudBottom + 36 + p * 90]; }
+  if (sp.kind === "fantome") {
+    const up = Math.min(1, t / 0.8) * Math.min(1, (11 - t) / 0.8);
+    return [272 + Math.sin(t * 1.3) * 3, base + 96 - up * 30 + Math.sin(t * 2.2) * 2];
+  }
+  if (sp.kind === "poisson") {
+    const c = t % 3;
+    if (c > 1.2) return null;
+    const q = c / 1.2;
+    return [226 + q * 34, base + 24 - Math.sin(q * Math.PI) * 50];
+  }
+  if (sp.kind === "cadeau") return [80 + sp.seed * 150 + Math.sin(t * 1.2) * 10, L.hudBottom + 30 + t * 16];
+  return [C.W / 2 + Math.sin(t * 0.9 + sp.seed * 6) * 120, base - 150 + Math.sin(t * 1.7) * 40]; // papillon
+}
+
+function drawSurprise(sp, night) {
+  const pos = surprisePos(sp);
+  if (!pos) return;
+  const [x, y] = pos, t = sp.t, INK = C.COLORS.trait;
+  ctx.save();
+  ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK; ctx.lineWidth = 2.2;
+  if (sp.kind === "etoile") {
+    const g = ctx.createLinearGradient(x, y, x + 70, y - 22);
+    g.addColorStop(0, "rgba(255,243,176,0.9)"); g.addColorStop(1, "rgba(255,243,176,0)");
+    ctx.strokeStyle = g; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 70, y - 22); ctx.stroke();
+    ctx.translate(x, y); ctx.rotate(t * 3);
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? 5 : 11, a = (i / 10) * TAU - Math.PI / 2; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    ctx.closePath(); ctx.fillStyle = "#fff3b0"; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.2; ctx.stroke();
+  } else if (sp.kind === "fantome") {
+    ctx.translate(x, y);
+    ctx.beginPath(); ctx.moveTo(-13, 14); ctx.lineTo(-13, -4); ctx.bezierCurveTo(-13, -24, 13, -24, 13, -4); ctx.lineTo(13, 14);
+    ctx.quadraticCurveTo(9.5, 9, 6.5, 14); ctx.quadraticCurveTo(3.2, 9, 0, 14); ctx.quadraticCurveTo(-3.2, 9, -6.5, 14); ctx.quadraticCurveTo(-9.5, 9, -13, 14);
+    ctx.closePath(); ctx.fillStyle = "rgba(251,248,242,0.95)"; ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.translate(14, -2); ctx.rotate(Math.sin(t * 7) * 0.5 - 0.5); // petit bras qui fait coucou
+    ctx.beginPath(); ctx.ellipse(4, 0, 5, 3.4, 0, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = INK; ctx.beginPath(); ctx.ellipse(-4.5, -7, 1.9, 2.6, 0, 0, TAU); ctx.ellipse(4.5, -7, 1.9, 2.6, 0, 0, TAU); ctx.fill();
+    ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, -2.5, 2.6, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.fillStyle = "rgba(240,140,160,0.55)"; ctx.beginPath(); ctx.ellipse(-8, -2.5, 2.6, 1.6, 0, 0, TAU); ctx.ellipse(8, -2.5, 2.6, 1.6, 0, 0, TAU); ctx.fill();
+  } else if (sp.kind === "poisson") {
+    const q = (t % 3) / 1.2;
+    ctx.translate(x, y); ctx.rotate(-0.9 + q * 1.8);
+    ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(-17, -7); ctx.lineTo(-17, 7); ctx.closePath(); ctx.fillStyle = "#f08a5d"; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 11, 7, 0, 0, TAU); ctx.fillStyle = "#f6a96b"; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(-1, -1, 5, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
+    ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(5.5, -1.5, 1.5, 0, TAU); ctx.fill();
+  } else if (sp.kind === "cadeau") {
+    ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.2) * 0.12);
+    ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 8); ctx.stroke();
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.ellipse(0, -24, 11, 13, 0, 0, TAU); ctx.fillStyle = "#f58fab"; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,0.75)"; ctx.beginPath(); ctx.arc(-2, -26, 6, Math.PI * 1.05, Math.PI * 1.5); ctx.stroke();
+    ctx.strokeStyle = INK;
+    ctx.beginPath(); ctx.roundRect(-10, 8, 20, 16, 3); ctx.fillStyle = "#a892ea"; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#ffd966"; ctx.fillRect(-2.2, 9, 4.4, 14); ctx.fillRect(-9, 13.5, 18, 4);
+    ctx.beginPath(); ctx.ellipse(-4, 6.5, 4, 2.6, -0.4, 0, TAU); ctx.ellipse(4, 6.5, 4, 2.6, 0.4, 0, TAU); ctx.fill(); ctx.stroke();
+  } else {
+    ctx.restore();
+    butterfly(x, y, t * 1.4, "#f2c94c");
+    ctx.save(); ctx.fillStyle = "#fff3b0"; sparkle(x + 9 + Math.sin(t * 5) * 3, y - 9, 3.5);
+  }
+  ctx.restore();
+  // petit scintillement pour attirer l'œil
+  ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 6);
+  ctx.fillStyle = night ? "#fff7c8" : "#ffffff";
+  sparkle(x - 16, y - 14, 3); sparkle(x + 17, y + 8, 2.4);
+  ctx.globalAlpha = 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -1438,6 +1548,7 @@ class PondScene {
     this.dialog = null; // fenêtre « nouvelle génération »
     this.picker = false; // choix du mini-jeu
     this.girlMoodT = 0; this.girlMood = null;
+    this.surprise = null; this.surpriseIn = 25 + Math.random() * 25; // première surprise assez vite
     this.girlJoy = 0; // Ombeline sourit un peu plus pendant un instant après un soin
     this.girlTalk = 0;
     this.lastAmbient = ambientMood(game.pet);
@@ -1455,6 +1566,7 @@ class PondScene {
   // ------------------------------------------------------------ entrées
   tap(x, y) {
     if (this.banner && this.banner.t < this.banner.max - 0.8) { this.banner = null; return; }
+    if (!this.gearOpen && !this.dialog && !this.picker && this.catchSurprise(x, y)) return;
     if (this.gearOpen) {
       const p = this.gearPanel();
       const row = x >= p.x && x <= p.x + p.w ? Math.floor((y - p.y - 4) / 38) : -1;
@@ -1585,13 +1697,45 @@ class PondScene {
     while (fs > 10 && ctx.measureText(n.str).width + (n.coins ? 70 : 28) > C.W - 24) { fs--; ctx.font = `700 ${fs}px ${FONT}`; }
     const w = Math.min(C.W - 24, ctx.measureText(n.str).width + (n.coins ? 70 : 28));
     rr(C.W / 2 - w / 2, y + 3, w, 30, "rgba(58,74,48,0.18)", null);
-    rr(C.W / 2 - w / 2, y, w, 30, "#f3e3a0", C.COLORS.trait, 2.5);
+    rr(C.W / 2 - w / 2, y, w, 30, "#f3e3a0", C.COLORS.trait, 2.2);
     text(n.str, C.W / 2 - (n.coins ? 20 : 0), y + 15, fs, C.COLORS.trait, "center", 700);
     if (n.coins) { coinIcon(C.W / 2 + w / 2 - 44, y + 15, 7); text(`+${n.coins}`, C.W / 2 + w / 2 - 34, y + 15, 12, C.COLORS.trait, "left", 700); }
     ctx.globalAlpha = 1;
   }
 
   // ------------------------------------------------------------ Ombeline
+  /** Fait apparaître une surprise adaptée au moment (nuit, hiver, jour). */
+  spawnSurprise() {
+    const night = this.pet.isNight() || (decorOn() && decorLayers.v === "nuit");
+    const frozen = decorOn() && decorLayers.v === "hiver";
+    const r = Math.random();
+    const kind = night ? (r < 0.5 ? "etoile" : r < 0.85 ? "fantome" : "cadeau")
+      : r < 0.4 && !frozen ? "poisson" : r < 0.65 ? "fantome" : r < 0.82 ? "papillon" : "cadeau";
+    this.surprise = { kind, t: 0, seed: Math.random() };
+    this.surpriseIn = 70 + Math.random() * 90;
+    if (!this.toast && GOTH) this.say(`${GIRL.name} : « Oh… regarde ! »`, 2);
+    audio.playNote(880, 0.12);
+  }
+
+  /** Touche la surprise : quelques pièces, des étoiles, et un clin d'œil d'Ombeline. */
+  catchSurprise(x, y) {
+    const sp = this.surprise;
+    const pos = sp && surprisePos(sp);
+    if (!pos || Math.hypot(x - pos[0], y - pos[1]) > SURPRISES[sp.kind].r) return false;
+    const def = SURPRISES[sp.kind];
+    const coins = sp.kind === "cadeau" ? 10 + Math.floor(sp.seed * 11) : def.coins;
+    gift(coins);
+    record("surprise");
+    this.surprise = null;
+    this.particles.burst(pos[0], pos[1], "#fff3b0", { count: 12, speed: 80, life: 0.9, radius: 3.5, shape: "star" });
+    this.say(`${def.text} +${coins} pièces`, 3.6);
+    this.setGirlMood("clin", 2.6);
+    this.girlJoy = 1.4;
+    audio.playNote(1047, 0.16);
+    vibrate(20);
+    return true;
+  }
+
   /** Ombeline change d'expression un instant (amour, miam, splash, clin…). */
   setGirlMood(mood, secs = 2) { if (mood) { this.girlMood = mood; this.girlMoodT = secs; } }
 
@@ -1877,6 +2021,10 @@ class PondScene {
     }
     if (this.toast && (this.toast.t -= dt) <= 0) this.toast = null;
     this.particles.update(dt);
+    if (this.surprise) {
+      this.surprise.t += dt;
+      if (this.surprise.t > SURPRISES[this.surprise.kind].life) this.surprise = null;
+    } else if (!pet.isEgg && !this.dialog && !this.picker && !this.gearOpen && !sheetOpen() && (this.surpriseIn -= dt) <= 0) this.spawnSurprise();
 
     this.flash = Math.max(0, (this.flash || 0) - dt * 1.6);
     if (this.banner && (this.banner.t -= dt) <= 0) this.banner = null;
@@ -1994,6 +2142,7 @@ class PondScene {
           { worried: { reclame: true, sec: "sec" }[ambientMood(this.pet)] || false, cheer: this.girlJoy > 0.7 && !(this.girlMoodT > 0), mood: this.girlMoodT > 0 ? this.girlMood : null });
       }
       this.drawBubble(night);
+      if (this.surprise) drawSurprise(this.surprise, night);
     }
     drawWeatherAir(this.t, night, this.lastDt || 1 / 60);
     this.particles.draw();
@@ -2067,7 +2216,7 @@ class PondScene {
       ctx.beginPath(); ctx.arc(sx * w * 2, sy * h, r * w * 2, 0, TAU); ctx.fill();
     }
     ctx.restore();
-    ctx.lineWidth = 4; ctx.strokeStyle = C.COLORS.trait; ctx.stroke(egg);
+    ctx.lineWidth = 2.2; ctx.strokeStyle = C.COLORS.trait; ctx.stroke(egg);
     if (p > 0.5) {
       ctx.beginPath();
       const cy = -h * 0.55;
@@ -2214,10 +2363,10 @@ class PondScene {
     const cx0 = c.x + (c.w - cw) / 2;
     coinIcon(cx0 + 7.5, c.y + c.h / 2, 7.5);
     text(`${progress.coins}`, cx0 + 20, c.y + c.h / 2 + 0.5, 13, C.COLORS.trait, "left", 700);
-    drawIcon(ctx, "reglages", L.gear.x, L.gear.y, 30);
-    circle(L.family.x, L.family.y, L.family.r, C.COLORS.blanc, C.COLORS.trait, 2);
-    drawIcon(ctx, "grimoire", L.family.x, L.family.y + 1, 22);
-    if (progress.quests?.list.some((q) => !q.done)) circle(L.family.x + 11, L.family.y - 11, 4, "#a3354a", C.COLORS.trait, 1.5);
+    drawIcon(ctx, "reglages", L.gear.x, L.gear.y, 28);
+    circle(L.family.x, L.family.y, L.family.r - 1, C.COLORS.blanc, C.COLORS.trait);
+    drawIcon(ctx, "grimoire", L.family.x, L.family.y + 0.5, 20);
+    if (progress.quests?.list.some((q) => !q.done)) circle(L.family.x + 10, L.family.y - 10, 4, "#a3354a", C.COLORS.trait, 1.5);
 
     for (const gz of L.gauges) {
       const need = C.NEEDS[gz.name];
@@ -2251,7 +2400,7 @@ class PondScene {
       const color = { calin: C.NEEDS.amour.button, miam: C.NEEDS.faim.button, jeu: C.COLORS.vert,
         dodo: C.NEEDS.energie.button, baignade: C.NEEDS.fraicheur.button, nounou: "#ffe3c4" }[b.name];
       if ((b.name === "nounou" && pet.nounou) || (b.name === "dodo" && pet.napping)) {
-        circle(b.cx, b.cy, b.r + 4, null, C.COLORS.trait, 2.5);
+        circle(b.cx, b.cy, b.r + 4, null, C.COLORS.trait, 2.2);
       }
       if (step === b.name) {
         const k = 0.5 + 0.5 * Math.sin(this.t * 6);
@@ -2339,7 +2488,7 @@ class PondScene {
     ctx.fillStyle = "rgba(29,27,34,0.2)";
     ctx.beginPath(); ctx.roundRect(x, y + 3, w, h, 10); ctx.fill();
     ctx.beginPath(); ctx.roundRect(x, y, w, h, 10);
-    ctx.fillStyle = C.COLORS.blanc; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
+    ctx.fillStyle = C.COLORS.blanc; ctx.fill(); ctx.lineWidth = 2.2; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
     // petits ronds qui descendent jusqu'à la tête d'Ombeline
     const from = { x: x + 26, y: y + h + 8 }, to = { x: GIRL.x + 4, y: head - 4 };
     for (let i = 0; i < 4; i++) {
@@ -2419,7 +2568,7 @@ function starRow(cx, y, n, t) {
     }
     ctx.closePath();
     ctx.fillStyle = on ? "#ffd84a" : "#efe6d6"; ctx.fill();
-    ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
+    ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
     ctx.restore();
   }
 }
@@ -2640,7 +2789,7 @@ class MinigameScene {
     if (this.multiplier > 1 && this.state === "play") {
       const pulse = 1 + 0.08 * Math.sin(this.t * 10);
       ctx.save(); ctx.translate(62, C.HUD_TOP + 52); ctx.scale(pulse, pulse);
-      rr(-38, -13, 76, 26, "#ffd1dc", C.COLORS.trait, 2.5);
+      rr(-38, -13, 76, 26, "#ffd1dc", C.COLORS.trait, 2.2);
       text(`Combo ×${this.multiplier}`, 0, 1, 13, C.COLORS.trait, "center", 700);
       ctx.restore();
     }
@@ -2670,8 +2819,8 @@ class MinigameScene {
     text(r.isNew && this.score > 0 ? T("record") : `Record : ${r.best}`, C.W / 2, cy + 32, 14,
       r.isNew && this.score > 0 ? "#e0527a" : "#6b5a50", "center", 700);
     if (this.t - this.endAt > 1) {
-      rr(C.W / 2 - 70, cy + 52, 140, 38, shade(C.COLORS.vert), C.COLORS.trait, 2.5);
-      rr(C.W / 2 - 70, cy + 49, 140, 38, C.COLORS.vert, C.COLORS.trait, 2.5);
+      rr(C.W / 2 - 70, cy + 52, 140, 38, shade(C.COLORS.vert), C.COLORS.trait, 2.2);
+      rr(C.W / 2 - 70, cy + 49, 140, 38, C.COLORS.vert, C.COLORS.trait, 2.2);
       text("Continuer", C.W / 2, cy + 69, 15, C.COLORS.trait, "center", 700);
     }
   }
@@ -2814,7 +2963,7 @@ class DepartureScene {
     // L'œuf reste sur le nénuphar
     if (!decorOn()) lilyPad(C.W / 2, L.charBottom, 60, night);
     ctx.beginPath(); ctx.ellipse(C.W / 2, L.charBottom - 24, 20, 26, 0, 0, TAU);
-    ctx.fillStyle = EGG_SHELL; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
+    ctx.fillStyle = EGG_SHELL; ctx.fill(); ctx.lineWidth = 2.2; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
     this.particles.draw();
     drawBanner({ title: T("bye", { a: this.parents.name, b: this.parents.partner.name }), sub: T("byeSub"), t: Math.min(3, 4.6 - this.t), max: 4.6 });
   }
@@ -2828,8 +2977,8 @@ const hitExit = (x, y) => Math.hypot(x - EXIT.x, y - EXIT.y) <= EXIT.r + 9;
 
 function drawExit() {
   circle(EXIT.x, EXIT.y + 2.5, EXIT.r, "rgba(29,27,34,0.2)", null);
-  circle(EXIT.x, EXIT.y, EXIT.r, C.COLORS.blanc, C.COLORS.trait, 2.5);
-  ctx.strokeStyle = C.COLORS.trait; ctx.lineWidth = 2.6; ctx.lineCap = "round";
+  circle(EXIT.x, EXIT.y, EXIT.r, C.COLORS.blanc, C.COLORS.trait, 2.2);
+  ctx.strokeStyle = C.COLORS.trait; ctx.lineWidth = 2.2; ctx.lineCap = "round";
   const k = 5;
   ctx.beginPath(); ctx.moveTo(EXIT.x - k, EXIT.y - k); ctx.lineTo(EXIT.x + k, EXIT.y + k);
   ctx.moveTo(EXIT.x + k, EXIT.y - k); ctx.lineTo(EXIT.x - k, EXIT.y + k); ctx.stroke();
@@ -2994,7 +3143,7 @@ class SimonScene {
       const r = b.r * (on ? 1.06 : 1);
       if (on) { ctx.globalAlpha = 0.35; circle(b.x, b.y, r + 12, BUBBLES[i].color, null); ctx.globalAlpha = 1; }
       circle(b.x, b.y + 4, r, shade(on ? BUBBLES[i].color : BUBBLES[i].soft), C.COLORS.trait, 2);
-      circle(b.x, b.y, r, on ? BUBBLES[i].color : BUBBLES[i].soft, C.COLORS.trait, 2.5);
+      circle(b.x, b.y, r, on ? BUBBLES[i].color : BUBBLES[i].soft, C.COLORS.trait, 2.2);
       ctx.globalAlpha = 0.7;
       ctx.beginPath(); ctx.ellipse(b.x - r * 0.35, b.y - r * 0.4, r * 0.28, r * 0.14, -0.6, 0, TAU);
       ctx.fillStyle = "#fff"; ctx.fill(); ctx.globalAlpha = 1;
@@ -3023,7 +3172,7 @@ function leafDome(x, yBase, lift) {
   ctx.bezierCurveTo(x - w, y - h * 1.2, x + w, y - h * 1.2, x + w, y);
   ctx.quadraticCurveTo(x, y + 10, x - w, y);
   ctx.fillStyle = C.COLORS.nenuphar; ctx.fill();
-  ctx.lineWidth = 3.5; ctx.strokeStyle = C.COLORS.trait; ctx.lineJoin = "round"; ctx.stroke();
+  ctx.lineWidth = 2.2; ctx.strokeStyle = C.COLORS.trait; ctx.lineJoin = "round"; ctx.stroke();
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(x, y - h * 0.85); ctx.lineTo(x, y + 3);
   ctx.moveTo(x, y - h * 0.45); ctx.lineTo(x - 18, y - h * 0.7);
@@ -3641,3 +3790,4 @@ async function start() {
 }
 
 start();
+
