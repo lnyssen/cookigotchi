@@ -344,9 +344,9 @@ function drawHat(id, cx, top, w, t = 0) {
 
 /** Haut de la tête du sprite (proportions relevées sur les sprites Figma). */
 function headTop(stage, x, y, w, h) {
-  if (stage === "tetard") return { cx: x + w * 0.48, top: y + h * 0.06, w: w * 0.6 };
-  if (stage === "grenouillette") return { cx: x + w * 0.478, top: y + h * 0.1, w: w * 0.6 };
-  return { cx: x + w * 0.5, top: y + h * 0.14, w: w * 0.56 };
+  if (stage === "tetard") return { cx: x + w * 0.48, top: y + h * 0.0, w: w * 0.6 };
+  if (stage === "grenouillette") return { cx: x + w * 0.478, top: y + h * 0.04, w: w * 0.6 };
+  return { cx: x + w * 0.5, top: y + h * 0.07, w: w * 0.56 };
 }
 
 /** Objets de décor achetés à la boutique, posés dans la mare (ou dessinés en vignette). */
