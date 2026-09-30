@@ -8,7 +8,7 @@ import { drawIcon } from "./icons.js";
 import { Pet, ambientMood, spriteName, ALL_SPRITES, currentHour, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 9; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 10; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -839,26 +839,42 @@ const DECOR_PAD_Y = 474, DECOR_H = 692;
 const decorOn = () => GOTH && !!img.decor_jour_avant;
 function decorVariant(night) {
   if (night) return "nuit";
-  const h = currentHour();
-  if (h >= 18 || h < 8) return "crepuscule";
-  return seasonNow() === "hiver" ? "hiver" : "jour";
+  const h = currentHour(), now = new Date();
+  const m = h * 60 + (h === now.getHours() ? now.getMinutes() : 30);
+  if (realWx && !Q.get("heure")) {
+    // vrai lever et coucher du soleil du jour
+    if (m < realWx.sunrise - 40 || m > realWx.sunset + 40) return "nuit";
+    if (Math.abs(m - realWx.sunrise) <= 45 || Math.abs(m - realWx.sunset) <= 45) return "crepuscule";
+  } else if (h >= 18 || h < 8) return "crepuscule";
+  const k = weatherKind();
+  const snowy = k === "snow" || (realWx && !Q.get("meteo") ? realWx.snow > 0.01 : seasonNow() === "hiver" && (k === "snow" || !!Q.get("mois")));
+  return snowy ? "hiver" : "jour";
 }
+// Voile posé sur le ciel selon le temps, et nombre de nuages en plus.
+const DECOR_SKY = {
+  clear: [null, 0], partly: [null, 1], cloudy: ["rgba(120,124,142,0.22)", 3], fog: ["rgba(236,236,242,0.34)", 2],
+  rain: ["rgba(84,90,116,0.30)", 3], storm: ["rgba(58,60,86,0.42)", 4], snow: ["rgba(205,210,225,0.22)", 2],
+};
+const DECOR_CLOUDS = [[-158, 22], [92, 60], [-64, 98], [150, 6]]; // le premier passe devant le soleil
 const decorLayers = { key: null };
 function decorPrepare(night) {
-  const v = decorVariant(night), k = smileK();
+  const v = decorVariant(night), k = smileK(), wk = weatherKind();
   const dy = L.pond.cy - 4 - DECOR_PAD_Y;
-  const key = `${v}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
+  const key = `${v}|${wk}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
   if (decorLayers.key !== key) {
     const sat = `saturate(${(0.6 + 0.4 * k).toFixed(2)})`;
-    const plan = (name, before) => renderLayer(() => {
+    const veil = DECOR_SKY[wk][0];
+    const plan = (name, before, after) => renderLayer(() => {
       ctx.filter = sat;
       before?.();
       const im = img[`decor_${v}_${name}`];
       if (im) ctx.drawImage(im, 0, dy, C.W, DECOR_H);
       ctx.filter = "none";
+      after?.();
     });
-    decorLayers.key = key; decorLayers.v = v; decorLayers.dy = dy;
-    decorLayers.fond = plan("fond", () => { ctx.fillStyle = DECOR[v].sky; ctx.fillRect(0, 0, C.W, view.H); });
+    decorLayers.key = key; decorLayers.v = v; decorLayers.dy = dy; decorLayers.wk = wk;
+    decorLayers.fond = plan("fond", () => { ctx.fillStyle = DECOR[v].sky; ctx.fillRect(0, 0, C.W, view.H); },
+      () => { if (veil) { ctx.fillStyle = veil; ctx.fillRect(0, 0, C.W, view.H); } });
     decorLayers.nuages = plan("nuages");
     decorLayers.avant = plan("avant", () => { ctx.fillStyle = DECOR[v].ground; ctx.fillRect(0, dy + DECOR_H - 40, C.W, Math.max(0, view.H - dy - DECOR_H + 40)); });
   }
@@ -870,7 +886,13 @@ function drawDecorBack(t, night) {
   const color = DECOR[d.v].sky;
   if (color !== bodyColor) { document.body.style.background = color; bodyColor = color; }
   ctx.drawImage(d.fond, 0, 0, C.W, view.H);
+  const extra = DECOR_SKY[d.wk][1];
+  for (let i = 0; i < extra; i++) { // ciel couvert : les mêmes nuages, décalés, qui dérivent chacun à leur rythme
+    const [ox, oy] = DECOR_CLOUDS[i];
+    ctx.drawImage(d.nuages, ox + Math.sin(t * 0.05 + i * 1.7) * 12, oy + Math.sin(t * 0.09 + i) * 2, C.W, view.H);
+  }
   ctx.drawImage(d.nuages, Math.sin(t * 0.07) * 9, Math.sin(t * 0.11) * 1.5, C.W, view.H); // les nuages dérivent doucement
+  if (d.wk === "storm" && (t % 9) < 0.12) { ctx.fillStyle = "rgba(255,255,240,0.28)"; ctx.fillRect(0, 0, C.W, view.H); } // éclair
 }
 function drawDecorFront(night, critters) {
   const d = decorPrepare(night), t = sceneT, dy = d.dy;
@@ -884,7 +906,9 @@ function drawDecorFront(night, critters) {
     ctx.beginPath(); ctx.ellipse(x, y, 5 + q * 16, 1.6 + q * 4.5, 0, 0, TAU); ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  if (critters && !night && d.v !== "hiver") butterfly(C.W / 2 + Math.sin(t * 0.35) * 110, dy + 300 + Math.sin(t * 0.9) * 24, t, "#e8a0b4");
+  const haze = { fog: "rgba(238,238,244,0.30)", cloudy: "rgba(120,124,142,0.10)", storm: "rgba(58,60,86,0.16)" }[d.wk];
+  if (haze) { ctx.fillStyle = haze; ctx.fillRect(0, 0, C.W, view.H); }
+  if (critters && !night && d.v !== "hiver" && (d.wk === "clear" || d.wk === "partly")) butterfly(C.W / 2 + Math.sin(t * 0.35) * 110, dy + 300 + Math.sin(t * 0.9) * 24, t, "#e8a0b4");
 }
 
 function drawSkyGothic(t, night) {
@@ -1268,9 +1292,37 @@ function seasonNow() {
   const m = month();
   return m === 12 || m <= 2 ? "hiver" : m <= 5 ? "printemps" : m <= 8 ? "ete" : "automne";
 }
-function weatherNow() {
+// Météo réelle du jour (Open-Meteo, gratuit et sans compte). Le lieu vient de perso.json
+// ({ "meteo": { "lat": …, "lon": … } }), Bruxelles par défaut. Hors ligne : tirage au hasard stable.
+const METEO = { lat: 50.85, lon: 4.35 };
+const METEO_KEY = "cookigotchi-meteo";
+let realWx = null; // { kind, snow (m), sunrise, sunset (minutes depuis minuit), at, day }
+function loadWx() {
+  try {
+    const w = JSON.parse(localStorage.getItem(METEO_KEY));
+    if (w && w.day === todayStr() && Date.now() - w.at < 3 * 3600e3) realWx = w;
+  } catch {}
+}
+async function refreshWx() {
+  if (Q.get("meteo") || (realWx && Date.now() - realWx.at < 30 * 60e3)) return;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${METEO.lat}&longitude=${METEO.lon}`
+      + "&current=weather_code,snow_depth&daily=sunrise,sunset&timezone=auto&forecast_days=1";
+    const j = await (await fetch(url)).json();
+    const c = j.current.weather_code;
+    const kind = c >= 95 ? "storm" : (c >= 71 && c <= 77) || c === 85 || c === 86 ? "snow"
+      : (c >= 51 && c <= 67) || (c >= 80 && c <= 82) ? "rain" : c === 45 || c === 48 ? "fog"
+      : c === 3 ? "cloudy" : c === 2 ? "partly" : "clear";
+    const mins = (iso) => Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16));
+    realWx = { kind, snow: j.current.snow_depth || 0, sunrise: mins(j.daily.sunrise[0]), sunset: mins(j.daily.sunset[0]), at: Date.now(), day: todayStr() };
+    try { localStorage.setItem(METEO_KEY, JSON.stringify(realWx)); } catch {}
+  } catch {}
+}
+/** Le temps qu'il fait : clear, partly, cloudy, fog, rain, storm, snow. */
+function weatherKind() {
   const forced = Q.get("meteo");
-  if (forced) return forced === "neige" ? "snow" : forced === "pluie" ? "rain" : "clear";
+  if (forced) return { neige: "snow", pluie: "rain", nuages: "cloudy", brouillard: "fog", orage: "storm" }[forced] || "clear";
+  if (realWx && realWx.day === todayStr()) return realWx.kind;
   const d = new Date();
   const key = `${d.toLocaleDateString("fr-CA")}-${Math.floor(d.getHours() / 3)}`;
   let h = 2166136261; for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
@@ -1279,6 +1331,11 @@ function weatherNow() {
   if (season === "hiver" && r < 0.25) return "snow";
   const rain = { automne: 0.33, hiver: 0.45, printemps: 0.3, ete: 0.12 }[season];
   return r < rain ? "rain" : "clear";
+}
+/** Version simple pour les effets (pluie, neige, ou rien). */
+function weatherNow() {
+  const k = weatherKind();
+  return k === "snow" ? "snow" : k === "rain" || k === "storm" ? "rain" : "clear";
 }
 
 const WX = { drops: [], flakes: [], leaves: [] };
@@ -3463,7 +3520,12 @@ async function start() {
   try {
     const perso = await (await fetch(`perso.json?v=${Date.now()}`)).json();
     if (perso?.prenom) DEFAULT_PLAYER = String(perso.prenom).slice(0, 20);
+    if (Number.isFinite(perso?.meteo?.lat) && Number.isFinite(perso?.meteo?.lon)) Object.assign(METEO, { lat: perso.meteo.lat, lon: perso.meteo.lon });
   } catch {}
+  loadWx();
+  refreshWx();
+  setInterval(refreshWx, 20 * 60e3);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshWx(); });
   resize();
   window.addEventListener("resize", resize);
   await Promise.all([

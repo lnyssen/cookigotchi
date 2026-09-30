@@ -1,6 +1,6 @@
 // Cache hors-ligne : tout le jeu est mis en cache à l'installation.
 // Réseau d'abord (les mises à jour arrivent dès qu'il y a du réseau), cache en secours hors-ligne.
-const VERSION = "cookigotchi-v30";
+const VERSION = "cookigotchi-v31";
 const FILES = [
   "./",
   "assets/sprites/grenouille_amour.png",
@@ -108,6 +108,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  if (e.request.url.startsWith("https://api.open-meteo.com/")) return; // météo : toujours en direct, jamais en cache
   e.respondWith(
     fetch(e.request)
       .then((res) => {

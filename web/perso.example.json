@@ -1,1 +1,7 @@
-{ "prenom": "Lou" }
+{
+  "prenom": "Lou",
+  "meteo": {
+    "lat": 50.85,
+    "lon": 4.35
+  }
+}

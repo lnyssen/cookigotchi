@@ -47,3 +47,11 @@ et une tâche programmée (`web/vercel.json`). Variables d'environnement nécess
 - `figma-svg-orig/` : les grenouilles exportées de Figma, avant traitement.
 
 Les dessins des grenouilles sont de Laurent Nyssen.
+
+## Météo
+
+Le décor suit la météo réelle et le lever/coucher du soleil (API [Open-Meteo](https://open-meteo.com), sans clé).
+Le lieu se règle dans `web/perso.json` : `"meteo": { "lat": 50.85, "lon": 4.35 }` (Bruxelles par défaut).
+Pour tester : `?meteo=clair|nuages|pluie|orage|neige|brouillard`.
+
+Le décor vient de `decor-svg-orig/` ; `python3 tools/decor_build.py` régénère les plans de `web/assets/decor/`.
