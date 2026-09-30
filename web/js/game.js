@@ -5,10 +5,10 @@ import * as C from "./config.js";
 import * as audio from "./audio.js";
 import { progress, record, startDay, onProgress, SHOP, ACHIEVEMENTS, QUESTS_BONUS, questDef, achievementValue, buy, toggleHat, toggleGirl, owns, redeemCode } from "./progress.js";
 import { drawIcon } from "./icons.js";
-import { Pet, ambientMood, spriteName, ALL_SPRITES, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
+import { Pet, ambientMood, spriteName, ALL_SPRITES, currentHour, randomName, randomHue, schoolModeOn, setSchoolMode, setDayOff, cycleSchoolMode, schoolCommunity, isHoliday } from "./pet.js";
 
 const img = {};
-const ASSET_V = 8; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
+const ASSET_V = 9; // à incrémenter quand les sprites changent (évite les vieux fichiers en cache)
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
@@ -825,7 +825,70 @@ function academy(x, y, night) {
   ctx.shadowBlur = 0;
 }
 
+// ---------------------------------------------------------------------------
+// Décor dessiné (assets/decor, 4 ambiances) : remplace le décor tracé en code des thèmes
+// gothique et hybride. Chaque ambiance = 3 plans SVG (fond, nuages, avant) au format 320 × 692,
+// calés pour que le grand nénuphar (y = 474 dans le dessin) tombe sous la grenouille.
+// ---------------------------------------------------------------------------
+const DECOR = {
+  jour: { sky: "#DCD6E6", ground: "#A7BDA1" }, crepuscule: { sky: "#D9C4D6", ground: "#97AA92" },
+  nuit: { sky: "#2A2640", ground: "#36534B" }, hiver: { sky: "#D6DCE7", ground: "#F4F5F8" },
+};
+const DECOR_PLANS = ["fond", "nuages", "avant"];
+const DECOR_PAD_Y = 474, DECOR_H = 692;
+const decorOn = () => GOTH && !!img.decor_jour_avant;
+function decorVariant(night) {
+  if (night) return "nuit";
+  const h = currentHour();
+  if (h >= 18 || h < 8) return "crepuscule";
+  return seasonNow() === "hiver" ? "hiver" : "jour";
+}
+const decorLayers = { key: null };
+function decorPrepare(night) {
+  const v = decorVariant(night), k = smileK();
+  const dy = L.pond.cy - 4 - DECOR_PAD_Y;
+  const key = `${v}|${canvas.width}|${canvas.height}|${Math.round(dy)}|${Math.floor(k * 4)}`;
+  if (decorLayers.key !== key) {
+    const sat = `saturate(${(0.6 + 0.4 * k).toFixed(2)})`;
+    const plan = (name, before) => renderLayer(() => {
+      ctx.filter = sat;
+      before?.();
+      const im = img[`decor_${v}_${name}`];
+      if (im) ctx.drawImage(im, 0, dy, C.W, DECOR_H);
+      ctx.filter = "none";
+    });
+    decorLayers.key = key; decorLayers.v = v; decorLayers.dy = dy;
+    decorLayers.fond = plan("fond", () => { ctx.fillStyle = DECOR[v].sky; ctx.fillRect(0, 0, C.W, view.H); });
+    decorLayers.nuages = plan("nuages");
+    decorLayers.avant = plan("avant", () => { ctx.fillStyle = DECOR[v].ground; ctx.fillRect(0, dy + DECOR_H - 40, C.W, Math.max(0, view.H - dy - DECOR_H + 40)); });
+  }
+  return decorLayers;
+}
+function drawDecorBack(t, night) {
+  sceneT = t;
+  const d = decorPrepare(night);
+  const color = DECOR[d.v].sky;
+  if (color !== bodyColor) { document.body.style.background = color; bodyColor = color; }
+  ctx.drawImage(d.fond, 0, 0, C.W, view.H);
+  ctx.drawImage(d.nuages, Math.sin(t * 0.07) * 9, Math.sin(t * 0.11) * 1.5, C.W, view.H); // les nuages dérivent doucement
+}
+function drawDecorFront(night, critters) {
+  const d = decorPrepare(night), t = sceneT, dy = d.dy;
+  ctx.drawImage(d.avant, 0, 0, C.W, view.H);
+  // ronds dans l'eau
+  ctx.strokeStyle = night ? "#8f9bc4" : "#ffffff"; ctx.lineWidth = 1.5;
+  for (let i = 0; i < 3; i++) {
+    const q = (t * 0.2 + i / 3) % 1;
+    const x = [84, 262, 214][i], y = dy + [492, 478, 516][i];
+    ctx.globalAlpha = (1 - q) * 0.45;
+    ctx.beginPath(); ctx.ellipse(x, y, 5 + q * 16, 1.6 + q * 4.5, 0, 0, TAU); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  if (critters && !night && d.v !== "hiver") butterfly(C.W / 2 + Math.sin(t * 0.35) * 110, dy + 300 + Math.sin(t * 0.9) * 24, t, "#e8a0b4");
+}
+
 function drawSkyGothic(t, night) {
+  if (decorOn()) return drawDecorBack(t, night);
   sceneT = t;
   const color = night ? "#0e0c13" : "#b3aeb8";
   if (color !== bodyColor) { document.body.style.background = color; bodyColor = color; }
@@ -949,6 +1012,7 @@ function bat(x, y, t) {
 }
 
 function drawPondGothic(night, critters = true) {
+  if (decorOn()) return drawDecorFront(night, critters);
   const t = sceneT;
   const p = L.pond;
   const k = smileK();
@@ -1463,7 +1527,7 @@ class PondScene {
   /** Ombeline change d'expression un instant (amour, miam, splash, clin…). */
   setGirlMood(mood, secs = 2) { if (mood) { this.girlMood = mood; this.girlMoodT = secs; } }
 
-  girlFeet() { return L.pond.cy + 50; } // debout sur la berge, au-dessus des messages
+  girlFeet() { return decorOn() ? L.charBottom + 47 : L.pond.cy + 50; } // debout sur la berge, au-dessus des messages
 
   girlTier() {
     const base = Math.min(3, Math.floor(this.pet.sourire / 25));
@@ -1917,7 +1981,7 @@ class PondScene {
     const b = charBox("oeuf");
     const p = this.pet.eggProgress;
     const wob = Math.sin(this.t * 18) * (this.eggWobble * 0.3 + (p > 0.6 ? 0.04 + 0.08 * Math.max(0, Math.sin(this.t * 2.5)) : 0.02));
-    lilyPad(C.W / 2, L.charBottom, b.w * 0.7, this.pet.isNight());
+    if (!decorOn()) lilyPad(C.W / 2, L.charBottom, b.w * 0.7, this.pet.isNight());
     ctx.save();
     ctx.translate(b.cx, L.charBottom - 4);
     ctx.rotate(wob);
@@ -2001,7 +2065,7 @@ class PondScene {
       g.addColorStop(0, "rgba(255,236,150,0.9)"); g.addColorStop(1, "rgba(255,236,150,0)");
       ctx.fillStyle = g; ctx.fillRect(box.cx - a, box.cy - a, a * 2, a * 2);
     }
-    lilyPad(C.W / 2, L.charBottom, Math.min(110, box.w * 0.5), night);
+    if (!decorOn()) lilyPad(C.W / 2, L.charBottom, Math.min(110, box.w * 0.5), night);
     const fx = swapState("grenouille", key, this.t);
     sx *= fx.pop; sy *= fx.pop;
     const w = box.w * sx, h = box.h * sy;
@@ -2679,7 +2743,7 @@ class DepartureScene {
       ctx.globalAlpha = 1;
     }
     // L'œuf reste sur le nénuphar
-    lilyPad(C.W / 2, L.charBottom, 60, night);
+    if (!decorOn()) lilyPad(C.W / 2, L.charBottom, 60, night);
     ctx.beginPath(); ctx.ellipse(C.W / 2, L.charBottom - 24, 20, 26, 0, 0, TAU);
     ctx.fillStyle = EGG_SHELL; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = C.COLORS.trait; ctx.stroke();
     this.particles.draw();
@@ -3405,6 +3469,7 @@ async function start() {
   await Promise.all([
     ...ALL_SPRITES.map((n) => loadImage(n, `assets/sprites/${n}.png?v=${ASSET_V}`)),
     ...GIRL_SPRITES.map((n) => loadImage(`ombeline_${n}`, `assets/ombeline/${n}.png?v=${ASSET_V}`)),
+    ...(GOTH ? Object.keys(DECOR).flatMap((v) => DECOR_PLANS.map((pl) => loadImage(`decor_${v}_${pl}`, `assets/decor/${v}_${pl}.svg?v=${ASSET_V}`))) : []),
     ...GIRL_SPRITES.filter((n) => n !== "amour" && n !== "doree").map((n) => loadImage(`ombeline_robe_${n}`, `assets/ombeline/robe_${n}.png?v=${ASSET_V}`)),
     document.fonts?.load(`600 16px ${FONTS.body}`).catch(() => {}),
     document.fonts?.load(`600 20px ${FONTS.title}`).catch(() => {}),

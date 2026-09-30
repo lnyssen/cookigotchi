@@ -90,6 +90,9 @@ export function isSchoolTime(date) {
   return m >= 8 * 60 + 15 && m < end;
 }
 
+/** Heure courante (ou forcée par ?heure=). */
+export const currentHour = () => FORCED_HOUR ?? new Date().getHours();
+
 export function isNightHour(date) {
   const h = FORCED_HOUR ?? date.getHours();
   return h >= C.NUIT_DEBUT || h < C.NUIT_FIN;
