@@ -1,6 +1,6 @@
 // Cache hors-ligne : tout le jeu est mis en cache à l'installation.
 // Réseau d'abord (les mises à jour arrivent dès qu'il y a du réseau), cache en secours hors-ligne.
-const VERSION = "cookigotchi-v35";
+const VERSION = "cookigotchi-v36";
 const FILES = [
   "./",
   "assets/sprites/grenouille_amour.png",

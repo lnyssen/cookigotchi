@@ -12,7 +12,7 @@ const ASSET_V = 13; // à incrémenter quand les sprites changent (évite les vi
 
 // Le prénom de la joueuse vient de perso.json (fichier privé, hors du dépôt public) ; un lien ?pour=… peut le changer.
 const PLAYER_KEY = "froggotchi-joueuse";
-let DEFAULT_PLAYER = "toi";
+let DEFAULT_PLAYER = ""; // vide : le jeu demande le prénom au premier lancement
 const player = {
   get name() { try { return localStorage.getItem(PLAYER_KEY) || DEFAULT_PLAYER; } catch { return DEFAULT_PLAYER; } },
   set name(v) { try { localStorage.setItem(PLAYER_KEY, v); } catch {} },
@@ -331,7 +331,7 @@ function drawHat(id, cx, top, w, t = 0) {
     ctx.beginPath(); ctx.roundRect(cx - bw * 0.4, y - h, bw * 0.8, h, 3); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#a3354a"; ctx.fillRect(cx - bw * 0.4, y - h * 0.32, bw * 0.8, h * 0.14);
   } else if (id === "couronne") {
-    const bw = w * 0.46, y = top + w * 0.08, h = w * 0.26;
+    const bw = w * 0.46, y = top + w * 0.12, h = w * 0.26;
     ctx.fillStyle = "#e6c25a";
     ctx.beginPath(); ctx.moveTo(cx - bw / 2, y);
     ctx.lineTo(cx - bw / 2, y - h); ctx.lineTo(cx - bw / 4, y - h * 0.55); ctx.lineTo(cx, y - h * 1.1);
@@ -345,8 +345,9 @@ function drawHat(id, cx, top, w, t = 0) {
 /** Haut de la tête du sprite (proportions relevées sur les sprites Figma). */
 function headTop(stage, x, y, w, h) {
   if (stage === "tetard") return { cx: x + w * 0.48, top: y + h * 0.0, w: w * 0.6 };
-  if (stage === "grenouillette") return { cx: x + w * 0.478, top: y + h * 0.04, w: w * 0.6 };
-  return { cx: x + w * 0.5, top: y + h * 0.07, w: w * 0.56 };
+  // réglé pour que le bas du chapeau touche le haut des yeux (les deux bosses de la tête), sans flotter
+  if (stage === "grenouillette") return { cx: x + w * 0.478, top: y + h * 0.06, w: w * 0.6 };
+  return { cx: x + w * 0.5, top: y + h * 0.1, w: w * 0.56 };
 }
 
 /** Objets de décor achetés à la boutique, posés dans la mare (ou dessinés en vignette). */
