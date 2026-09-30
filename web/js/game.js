@@ -288,7 +288,7 @@ function pingVisit() {
 const shopSeen = () => { try { return localStorage.getItem("froggotchi-boutique-vue") === "1"; } catch { return true; } };
 
 function coinIcon(x, y, r) {
-  circle(x, y, r, "#e6c25a", C.COLORS.trait, 1.8);
+  circle(x, y, r, "#e6c25a", C.COLORS.trait, 2.2);
   ctx.strokeStyle = "rgba(29,27,34,0.55)"; ctx.lineWidth = 1.3;
   ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0, TAU); ctx.stroke();
 }
@@ -303,7 +303,7 @@ function drawHat(id, cx, top, w, t = 0) {
     ctx.fillStyle = "#1d1b22";
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s, y - s * 0.7); ctx.lineTo(x - s, y + s * 0.7); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + s, y - s * 0.7); ctx.lineTo(x + s, y + s * 0.7); ctx.closePath(); ctx.fill(); ctx.stroke();
-    circle(x, y, s * 0.3, "#1d1b22", INK, 1.6);
+    circle(x, y, s * 0.3, "#1d1b22", INK, 2.2);
   } else if (id === "sorciere") {
     const bw = w * 0.62, h = w * 0.62, y = top + w * 0.05;
     ctx.fillStyle = "#2a2433";
@@ -316,10 +316,13 @@ function drawHat(id, cx, top, w, t = 0) {
     const cols = ["#e8a0b4", "#f3e3a0", "#c3b1e1", "#e8a0b4", "#a8c8e6"];
     for (let i = 0; i < 5; i++) {
       const a = Math.PI * (1.15 + i * 0.175);
-      const x = cx + Math.cos(a) * w * 0.34, y = top + w * 0.3 + Math.sin(a) * w * 0.3;
+      const x = cx + Math.cos(a) * w * 0.36, y = top + w * 0.2 + Math.sin(a) * w * 0.3;
+      const k = w / 84; // la fleur suit la taille de la tête
+      ctx.fillStyle = INK;
+      for (const pa of [0, 1.26, 2.51, 3.77, 5.03]) { ctx.beginPath(); ctx.arc(x + Math.cos(pa) * 3.6 * k, y + Math.sin(pa) * 3.6 * k, 3.2 * k + 2, 0, TAU); ctx.fill(); }
       ctx.fillStyle = cols[i];
-      for (const pa of [0, 1.26, 2.51, 3.77, 5.03]) { ctx.beginPath(); ctx.arc(x + Math.cos(pa) * 3.2, y + Math.sin(pa) * 3.2, 2.8, 0, TAU); ctx.fill(); }
-      circle(x, y, 1.8, "#e6c25a", null);
+      for (const pa of [0, 1.26, 2.51, 3.77, 5.03]) { ctx.beginPath(); ctx.arc(x + Math.cos(pa) * 3.6 * k, y + Math.sin(pa) * 3.6 * k, 3.2 * k, 0, TAU); ctx.fill(); }
+      circle(x, y, 2 * k, "#e6c25a", null);
     }
   } else if (id === "hautdeforme") {
     const bw = w * 0.5, y = top + w * 0.06, h = w * 0.42;
@@ -350,7 +353,7 @@ function headTop(stage, x, y, w, h) {
 function drawDecor(id, x, y, t, night, s = 1) {
   const INK = C.COLORS.trait;
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-  ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK; ctx.lineWidth = 2.2;
+  ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK; ctx.lineWidth = 2.2 / s;
   if (id === "champignons") {
     for (const [dx, h, r] of [[-7, 12, 7], [5, 9, 5.5]]) {
       ctx.fillStyle = "#efe9da"; ctx.fillRect(dx - 2, -h, 4, h); ctx.strokeRect(dx - 2, -h, 4, h);
@@ -365,7 +368,7 @@ function drawDecor(id, x, y, t, night, s = 1) {
   } else if (id === "citrouille") {
     ctx.fillStyle = "#e0893a";
     for (const dx of [-6, 6, 0]) { ctx.beginPath(); ctx.ellipse(dx, -9, 7.5, 9, 0, 0, TAU); ctx.fill(); ctx.stroke(); }
-    ctx.strokeStyle = "#5d7a3a"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -18); ctx.quadraticCurveTo(2, -23, 5, -23); ctx.stroke();
+    ctx.strokeStyle = "#5d7a3a"; ctx.lineWidth = 2.2 / s; ctx.beginPath(); ctx.moveTo(0, -18); ctx.quadraticCurveTo(2, -23, 5, -23); ctx.stroke();
     if (night) { ctx.fillStyle = "#ffcf7a"; ctx.beginPath(); ctx.moveTo(-5, -11); ctx.lineTo(-2, -13); ctx.lineTo(-2, -9); ctx.moveTo(5, -11); ctx.lineTo(2, -13); ctx.lineTo(2, -9); ctx.fill(); }
   } else if (id === "chaudron") {
     ctx.fillStyle = "#1d1b22";
@@ -382,13 +385,13 @@ function drawDecor(id, x, y, t, night, s = 1) {
     ctx.beginPath(); ctx.arc(4, -17, 5, 0, TAU); ctx.fill();
     ctx.fillStyle = "#e6c25a"; ctx.beginPath(); ctx.moveTo(8, -18); ctx.lineTo(13, -16); ctx.lineTo(8, -15); ctx.fill();
     ctx.fillStyle = "#f4f0ea"; ctx.beginPath(); ctx.arc(5.5, -18.5, 1.2, 0, TAU); ctx.fill();
-    ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-11, 1); ctx.stroke();
+    ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2.2 / s; ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-11, 1); ctx.stroke();
   } else if (id === "chat") {
     ctx.fillStyle = "#1d1b22";
     ctx.beginPath(); ctx.ellipse(0, -10, 8, 10, 0, 0, TAU); ctx.fill();
     ctx.beginPath(); ctx.arc(0, -22, 7, 0, TAU); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-6, -25); ctx.lineTo(-5, -33); ctx.lineTo(-1, -28); ctx.moveTo(6, -25); ctx.lineTo(5, -33); ctx.lineTo(1, -28); ctx.fill();
-    ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2.2;
+    ctx.strokeStyle = "#1d1b22"; ctx.lineWidth = 2.2 / s;
     ctx.beginPath(); ctx.moveTo(7, -4); ctx.quadraticCurveTo(18, -6 + Math.sin(t * 2) * 4, 14, -18 + Math.sin(t * 2) * 3); ctx.stroke();
     ctx.fillStyle = "#e6c25a";
     const blink = (t % 5) < 0.15;
@@ -1210,8 +1213,8 @@ function swapState(id, key, t, dur = 0.22) {
   return { prev: p < 1 ? f.prev : null, p, pop: 1 + Math.sin(p * Math.PI) * 0.07 };
 }
 
-function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, mood = null, outfit = progress.girl || {}, scale = 1.3 } = {}) {
-  const main = scale > 1; // la vraie Ombeline de la mare (les vignettes de la boutique ne s'animent pas)
+function drawGirl(x, feet, tier, t, night, { worried = false, cheer = false, mood = null, outfit = progress.girl || {}, scale = 1.3, preview = false } = {}) {
+  const main = !preview && scale > 1; // la vraie Ombeline de la mare (les vignettes de la boutique ne s'animent pas)
   if (weatherNow() === "rain" && owns("parapluie") && main) outfit = { ...outfit, main: "parapluie" };
   const key = girlKey(tier, { worried, cheer, night, mood });
   const fx = main ? swapState("fille", key, t) : { prev: null, p: 1, pop: 1 };
@@ -3410,11 +3413,11 @@ class BookScene {
 
   card(x, y, w, h, done = false) {
     rr(x, y + 3, w, h, "rgba(29,27,34,0.12)", null, 0, GOTH ? 8 : 16);
-    rr(x, y, w, h, done ? (GOTH ? "#e7eadf" : "#eef7e8") : C.COLORS.blanc, C.COLORS.trait, 2, GOTH ? 8 : 16);
+    rr(x, y, w, h, done ? (GOTH ? "#e7eadf" : "#eef7e8") : C.COLORS.blanc, C.COLORS.trait, 2.2, GOTH ? 8 : 16);
   }
 
   bar(x, y, w, k, color) {
-    rr(x, y, w, 10, "rgba(29,27,34,0.08)", C.COLORS.trait, 1.8);
+    rr(x, y, w, 10, "rgba(29,27,34,0.08)", C.COLORS.trait, 2.2);
     if (k > 0) rr(x + 2, y + 2, Math.max(6, (w - 4) * Math.min(1, k)), 6, color, null);
   }
 
@@ -3455,7 +3458,7 @@ class BookScene {
   drawShop(y) {
     text(GOTH ? "Boutique d'Ombeline. Ni repris, ni échangé." : "La boutique d'Ombeline", C.W / 2, y + 12, 12, C.COLORS.trait, "center", 600);
     y += 30;
-    const colW = (C.W - 38) / 2, cardH = 132;
+    const colW = (C.W - 38) / 2, cardH = 206;
     const groups = [["chapeau", "Pour ta grenouille"], ["ombeline", "Pour Ombeline"], ["decor", "Pour la mare"]];
     for (const [kind, label] of groups) {
     text(label, 18, y + 10, 15, C.COLORS.trait, "left", 700);
@@ -3466,30 +3469,33 @@ class BookScene {
       const have = owns(item.id);
       const worn = item.kind === "chapeau" ? progress.hat === item.id : item.kind === "ombeline" ? progress.girl?.[item.slot] === item.id : false;
       this.card(x, yy, colW, cardH, have);
-      // aperçu
-      const cx = x + colW / 2, cy = yy + 62;
+      // aperçu : même taille que dans la mare, pour que les contours soient identiques partout
+      const cx = x + colW / 2, base = yy + 156;
+      ctx.save(); ctx.beginPath(); ctx.rect(x + 2, yy + 2, colW - 4, cardH - 4); ctx.clip();
       if (item.kind === "ombeline") {
-        drawGirl(cx, yy + 88, 2, this.t, false, { outfit: { [item.slot]: item.id }, scale: item.id === "parapluie" ? 0.72 : 0.92 });
+        drawGirl(cx, base, 2, this.t, false, { outfit: { [item.slot]: item.id }, scale: 1.3, preview: true });
       } else if (item.kind === "chapeau") {
         const k = "grenouille_paisible", sp = img[k];
         if (sp) {
-          const h = 46, w = (sp.width * h) / sp.height;
-          drawSprite(k, cx - w / 2, cy - h / 2 + 4, w, h, 0);
-          const hd = headTop("grenouille", cx - w / 2, cy - h / 2 + 4, w, h);
+          const h = C.AGE_SIZES_PX.grenouille * L.charScale, w = (sp.width * h) / sp.height;
+          const top = base - h * (1 - (SPRITE_FOOT[k] || 0));
+          drawSprite(k, cx - w / 2, top, w, h, 0);
+          const hd = headTop("grenouille", cx - w / 2, top, w, h);
           drawHat(item.id, hd.cx, hd.top, hd.w, this.t);
         }
       } else {
-        drawDecor(item.id, cx, cy + 22, this.t, false, 1.5);
+        drawDecor(item.id, cx, base - 18, this.t, false, 2.2);
       }
+      ctx.restore();
       let ns = 12;
       ctx.font = `700 ${ns}px ${FONT}`;
       while (ns > 9 && ctx.measureText(item.name).width > colW - 10) { ns--; ctx.font = `700 ${ns}px ${FONT}`; }
-      text(item.name, cx, yy + 100, ns, C.COLORS.trait, "center", 700);
+      text(item.name, cx, yy + 172, ns, C.COLORS.trait, "center", 700);
       if (have) {
         const wearable = item.kind !== "decor";
         const label = wearable ? (worn ? "Porté ✓" : "Porter") : "Installé ✓";
-        rr(x + 14, yy + 110, colW - 28, 16, worn || !wearable ? "#d3ddd0" : C.COLORS.blanc, C.COLORS.trait, 1.6, 8);
-        text(label, cx, yy + 118.5, 11, C.COLORS.trait, "center", 700);
+        rr(x + 14, yy + 182, colW - 28, 17, worn || !wearable ? "#d3ddd0" : C.COLORS.blanc, C.COLORS.trait, 2.2, 8.5);
+        text(label, cx, yy + 191, 11, C.COLORS.trait, "center", 700);
         if (wearable) {
           this.hits.push({ x, y: yy, w: colW, h: cardH, on: () => {
             if (item.kind === "chapeau") toggleHat(item.id); else toggleGirl(item.id);
@@ -3498,8 +3504,8 @@ class BookScene {
         }
       } else {
         const can = progress.coins >= item.price;
-        coinIcon(cx - 14, yy + 118, 7);
-        text(`${item.price}`, cx - 4, yy + 118, 13, can ? C.COLORS.trait : "#a3354a", "left", 700);
+        coinIcon(cx - 14, yy + 190, 7);
+        text(`${item.price}`, cx - 4, yy + 190, 13, can ? C.COLORS.trait : "#a3354a", "left", 700);
         this.hits.push({ x, y: yy, w: colW, h: cardH, on: () => {
           if (buy(item.id)) {
             audio.play("niveau");
