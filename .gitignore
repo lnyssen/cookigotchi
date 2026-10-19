@@ -17,3 +17,4 @@ __pycache__/
 save.json
 .DS_Store
 linkedin-*.png
+demo-build/
