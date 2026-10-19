@@ -2561,11 +2561,12 @@ class PondScene {
 // Combos, 4 insectes, difficulté croissante, étoiles et record.
 // ---------------------------------------------------------------------------
 const BUGS = {
-  mouche: { pts: 1, r: 9, speed: [55, 85] },
-  luciole: { pts: 3, r: 8, speed: [40, 60] },
-  libellule: { pts: 5, r: 11, speed: [130, 170] },
-  guepe: { pts: -3, r: 10, speed: [60, 95] },
+  mouche: { pts: 1, r: 9, speed: [45, 70] },
+  luciole: { pts: 3, r: 8, speed: [34, 52] },
+  libellule: { pts: 5, r: 11, speed: [110, 145] },
+  guepe: { pts: -3, r: 10, speed: [55, 85] },
 };
+const AIM_RADIUS = 60; // aide à viser : la langue part vers l'insecte le plus proche du doigt
 const FLIES_DURATION = 30;
 const FLIES_STARS = [15, 35, 60];
 
@@ -2635,8 +2636,16 @@ class MinigameScene {
     if (this.state !== "play" || this.dizzy > 0) return;
     if (this.tongue && this.tongue.k < 0.5) return; // la langue est déjà en route
     const f = this.frog;
+    // Aide à viser (le doigt cache l'insecte, et il bouge) : on vise l'insecte le plus proche du doigt.
+    // Les guêpes ne sont choisies que si on tape vraiment dessus.
+    let target = null, best = AIM_RADIUS;
+    for (const b of this.bugs) {
+      if (b.caught) continue;
+      const d = Math.hypot(b.x - x, b.y - y) + (b.kind === "guepe" ? 30 : 0);
+      if (d < best) { best = d; target = b; }
+    }
     if (y > f.mouthY) y = f.mouthY - 10;
-    this.tongue = { x, y, k: 0, caught: [], checked: false };
+    this.tongue = { x, y, k: 0, caught: [], checked: false, target };
     audio.playNote(880, 0.06);
   }
 
@@ -2692,17 +2701,24 @@ class MinigameScene {
     // Langue : aller (k 0 -> 0.5), puis retour avec les proies collées.
     const tg = this.tongue;
     if (tg) {
-      tg.k += dt / 0.26;
+      tg.k += dt / 0.22;
       const f = this.frog;
+      // la langue suit l'insecte visé pendant qu'elle s'allonge
+      if (tg.target && !tg.target.caught && tg.k < 0.5) { tg.x = tg.target.x; tg.y = Math.min(tg.target.y, f.mouthY - 10); }
       const ext = tg.k < 0.5 ? tg.k * 2 : Math.max(0, 2 - tg.k * 2);
       const tipX = f.mouthX + (tg.x - f.mouthX) * ext, tipY = f.mouthY + (tg.y - f.mouthY) * ext;
-      if (tg.k >= 0.5 && !tg.checked) {
-        tg.checked = true;
+      if (!tg.checked) {
+        // tout ce que le bout de la langue touche en chemin est attrapé
         for (const b of this.bugs) {
-          if (!b.caught && Math.hypot(b.x - tipX, b.y - tipY) < b.r + 16) { b.caught = true; tg.caught.push(b); }
+          if (!b.caught && Math.hypot(b.x - tipX, b.y - tipY) < b.r + 18) { b.caught = true; tg.caught.push(b); }
         }
-        if (tg.caught.length) this.onCatch(tg.caught, tipX, tipY);
-        else { this.combo = 0; }
+        if (tg.k >= 0.5) {
+          tg.checked = true;
+          const t0 = tg.target;
+          if (t0 && !t0.caught && Math.hypot(t0.x - tipX, t0.y - tipY) < t0.r + 30) { t0.caught = true; tg.caught.push(t0); }
+          if (tg.caught.length) this.onCatch(tg.caught, tipX, tipY);
+          else { this.combo = 0; }
+        }
       }
       for (const b of tg.caught) { b.x = tipX; b.y = tipY; }
       if (tg.k >= 1) {
